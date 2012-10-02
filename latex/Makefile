@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Tue 2012-10-02 23:24 svarrette>
+# Time-stamp: <Tue 2012-10-02 23:42 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  / 
@@ -183,8 +183,8 @@ test:
 	@echo "Consider running 'make versioninfo' to get info on git versionning variables"
 
 ############################### Archiving ################################
-#archive: clean
-
+archive: clean
+	tar -C ../ -cvzf ../$(SUPER_DIR)-$(VERSION).tar.gz --exclude ".svn" --exclude ".git" --exclude "'$(RELEASE_DIR)/*.pdf'" $(SUPER_DIR)/
 
 ############################### Git Bootstrapping rules ################################
 ifeq ($(GRB),)
