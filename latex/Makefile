@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Tue 2012-10-02 23:42 svarrette>
+# Time-stamp: <Tue 2012-10-02 23:58 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  / 
@@ -12,6 +12,9 @@
 #
 ####################################################################################
 # Compilation of files written in LaTeX. 
+# 
+# Grab the lastest version of this Makefile from:
+#            https://github.com/Falkor/Makefiles/tree/devel/latex
 #
 # --------------------------------------------------------------------------------
 # This is a generic makefile in the sense that it doesn't require to be 
