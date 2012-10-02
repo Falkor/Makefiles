@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Tue 2012-10-02 23:08 svarrette>
+# Time-stamp: <Tue 2012-10-02 23:24 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  / 
@@ -262,9 +262,9 @@ release: clean $(TARGET_PDF)
 		git rm $(LIST_RELEASE_TO_DELETE); \
 		git commit -s -m "Delete previous release copy $(LIST_RELEASE_TO_DELETE)" $(LIST_RELEASE_TO_DELETE); \
 	fi
-	@echo git flow release finish -s $(VERSION)
-	@echo git push origin
-	@echo git push origin --tags
+	git flow release finish -s $(VERSION)
+	git push origin
+	git push origin --tags
 endif
 
 ############################### LaTeX Compilation rules ################################
