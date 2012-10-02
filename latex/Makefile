@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Tue 2012-10-02 23:58 svarrette>
+# Time-stamp: <Wed 2012-10-03 00:23 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  / 
@@ -187,7 +187,7 @@ test:
 
 ############################### Archiving ################################
 archive: clean
-	tar -C ../ -cvzf ../$(SUPER_DIR)-$(VERSION).tar.gz --exclude ".svn" --exclude ".git" --exclude "'$(RELEASE_DIR)/*.pdf'" $(SUPER_DIR)/
+	tar -C ../ -cvzf ../$(SUPER_DIR)-$(VERSION).tar.gz --exclude ".svn" --exclude ".git"  --exclude "*~" --exclude ".DS_Store" --exclude "'$(RELEASE_DIR)/*.pdf'" $(SUPER_DIR)/
 
 ############################### Git Bootstrapping rules ################################
 ifeq ($(GRB),)
