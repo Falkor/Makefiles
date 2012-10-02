@@ -3,23 +3,12 @@
 
 Copyright (c) 2012 [Sebastien Varrette](mailto:<Sebastien.Varrette@uni.lu>) [www](http://varrette.gforge.uni.lu)
 
-        Time-stamp: <Tue 2012-10-02 10:07 svarrette>
+        Time-stamp: <Wed 2012-10-03 00:03 svarrette>
 
 -------------------
 
-# HPC Platforms
+# LaTeX project 
 
-Lecture of the Parallel computing course, traditionally given by me.
-
-
-# Installation
-
-The LaTeX sources of this lecture are hosted as a Git repository on Gforge. 
-You should therefore first clone this repository as follows:
-
-	$> git clone git+ssh://<yourGFORGELogin>@gforge.uni.lu/git/varrette/slides/intro_HPC_platforms.git
-
-(Replace `<yourGFORGELogin>` with... your Gforge login).
 
 ## Git Branching Model
 
