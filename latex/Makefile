@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Wed 2012-10-03 00:23 svarrette>
+# Time-stamp: <Wed 2012-10-03 15:59 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  / 
@@ -382,98 +382,6 @@ $(TARGET_PDF): $(TARGETS_DEPS)
 	@echo "==> $@ successfully generated"
 endif
 
-
-
-
-
-# $(PDF): $(TARGETS_DEPS)
-# 	$(MAKE) singlerun
-# 	$(MAKE) bib
-# 	$(MAKE) singlerun
-
-# # Dvi files generation
-# dvi $(DVI) : $(TARGETS_DEPS)
-# 	@echo "==> Now generating $(DVI)"
-# 	@for f in $(MAIN_TEX); do                                    \
-# 	   $(LATEX) $$f;                                             \
-# 	   bib=`grep "^[\]bibliography{" $$f|sed -e "s/^[\]bibliography{\(.*\)}/\1/"|tr "," " "`;\
-# 	   if [ ! -z "$$bib" ]; then                                 \
-# 	  	echo "==> Now running BibTeX ($$bib used in $$f)";   \
-# 		$(BIBTEX) `basename $$f .tex`;                       \
-# 		$(LATEX) $$f;                                        \
-# 	   fi;                                                       \
-# 	   $(LATEX) $$f;                                             \
-# 	   $(MAKE) move_to_trash;                                    \
-# 	done
-# 	@echo "==> $(DVI) generated"
-
-# # Compressed Postscript generation 
-# ps $(PS) $(TARGET_PS_GZ) : $(DVI)
-# 	@for dvi in $(DVI); do                                \
-# 	   	ps=`basename $$dvi .dvi`.ps;                  \
-# 	   	echo "==> Now generating $$ps.gz from $$dvi"; \
-# 	  	$(DVIPS) -q -o $$ps $$dvi;                    \
-# 	   	$(GZIP) -f $$ps;                              \
-# 	done
-# 	@if [ "$(OUTPUT_DIR)" != "." ]; then                        \
-# 		$(MAKE) create_output_dir;                           \
-# 		for ps in $(PS); do                                 \
-# 			echo "==> Now moving $$ps.gz to $(OUTPUT_DIR)/"; \
-# 			mv $$ps.gz $(OUTPUT_DIR);                   \
-# 		done;                                               \
-# 	fi
-
-
-# ###################### The following part is specific for the case where pdflatex is used ######################
-# ifeq ("$(USE_PDFLATEX)", "yes")
-# pdflatex $(TARGET_PDF): $(TEX_SRC) $(FIGURES)
-# 	@echo "==> Now generating $(PDF)"
-# 	@for f in $(MAIN_TEX); do                                    \
-# 		$(PDFLATEX) -draftmode $(CMDLINE_OPTS) $$f; \
-# 		exit_status=$$?; \
-# 		if [ $$exit_status -ne 0 ]; then \
-# 			tail -n 50 `basename $$f .tex`.log; \
-# 			echo -e "\n\n"; \
-# 			break; \
-# 		fi; \
-# 	   	bib=`grep "^[\]bibliography{" $$f|sed -e "s/^[\]bibliography{\(.*\)}/\1/"|tr "," " "`;\
-# 	   	if [ ! -z "$$bib" ]; then                                 \
-# 	  		echo "==> Now running BibTeX ($$bib used in $$f)";   \
-# 			$(BIBTEX) `basename $$f .tex`; \
-# 			echo -e "\n==> Now running second pdfLaTeX pass"; \
-# 			$(PDFLATEX) -draftmode $(CMDLINE_OPTS) $$f;            \
-# 	   	fi;\
-# 		echo -e "\n==> Now running the last pdfLaTeX pass to generate `basename $$f .tex`.pdf"; \
-# 	   	$(PDFLATEX) $(CMDLINE_OPTS) $$f;                                          \
-# 	   	$(MAKE) move_to_trash;                                    \
-# 	done
-# 	@if [ "$(OUTPUT_DIR)" != "." ]; then                         \
-# 		$(MAKE) create_output_dir;                           \
-# 		for pdf in $(PDF); do                                \
-# 			echo "==> Now moving $$pdf to $(OUTPUT_DIR)/"; \
-# 			mv $$pdf $(OUTPUT_DIR);                      \
-# 		done;                                                \
-# 	fi
-# 	@$(MAKE) help
-
-# ###################### End of specific case where pdflatex is used ######################
-# else 
-# pdf $(TARGET_PDF): $(DVI)
-# 	@for dvi in $(DVI); do                                \
-# 	   	ps=`basename $$dvi .dvi`.pdf;                 \
-# 	   	echo "==> Now generating $$pdf from $$dvi";   \
-# 	  	$(DVIPDF) $$dvi;                              \
-# 	done
-# 	$(MAKE) create_output_dir           	     
-# 	@if [ "$(OUTPUT_DIR)" != "." ]; then                             \
-# 		for pdf in $(PDF); do                                    \
-# 			echo "==> Now moving $$pdf to $(OUTPUT_DIR)/";   \
-# 			mv $$pdf $(OUTPUT_DIR);                          \
-# 		done;                                                    \
-# 	fi
-# 	@$(MAKE) help
-# endif
-# ###################### End of specific case where pdflatex is NOT used ######################
 
 TO_TRASH=$(shell ls $(TO_MOVE) 2>/dev/null | xargs echo)
 move_to_trash:
