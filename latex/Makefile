@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Tue 2012-10-02 15:13 svarrette>
+# Time-stamp: <Wed 2012-10-03 00:23 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  / 
@@ -12,6 +12,9 @@
 #
 ####################################################################################
 # Compilation of files written in LaTeX. 
+# 
+# Grab the lastest version of this Makefile from:
+#            https://github.com/Falkor/Makefiles/tree/devel/latex
 #
 # --------------------------------------------------------------------------------
 # This is a generic makefile in the sense that it doesn't require to be 
@@ -55,9 +58,13 @@ USE_PDFLATEX = yes
 
 # Directory where PDF, Postcript files and other generated files will be placed
 # /!\ Please ensure there is no trailing space after the values
-OUTPUT_DIR = .
-TRASH_DIR  = .Trash
-HTML_DIR   = $(OUTPUT_DIR)/HTML
+OUTPUT_DIR  = .
+TRASH_DIR   = .Trash
+HTML_DIR    = $(OUTPUT_DIR)/HTML
+SUPER_DIR   = $(shell basename `pwd`)
+RELEASE_DIR = release
+LIST_RELEASE_TO_DELETE = $(shell ls $(RELEASE_DIR)/*.pdf | grep -v $(VERSION) | xargs echo)
+
 # Check availibility of source files
 TEX_SRC    = $(wildcard *.tex)
 STYLE_SRC  = $(wildcard *.sty)
@@ -113,7 +120,7 @@ LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
 LAST_TAG = $(shell git describe --tags $(LAST_TAG_COMMIT) )
 TAG_PREFIX = "v"
 
-VERSION  = $(shell head VERSION)
+VERSION  = $(shell [ -f VERSION ] && head VERSION || echo "0.0.1")
 # OR try to guess directly from the last git tag
 #VERSION    = $(shell  git describe --tags $(LAST_TAG_COMMIT) | sed "s/^$(TAG_PREFIX)//")
 MAJOR      = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
@@ -132,7 +139,7 @@ NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
 TARGETS      = $(TARGET_PDF)
 TARGETS_DEPS = $(TEX_SRC) $(STYLE_SRC) $(BIB_SRC) $(FIGURES) 
 
-.PHONY: all clean create_output_dir dvi force help html move_to_trash pdflatex ps release rtf setup singlerun start_bump_major start_bump_minor start_bump_patch test versioninfo 
+.PHONY: all archive clean create_output_dir dvi force help html move_to_trash pdflatex ps release rtf setup singlerun start_bump_major start_bump_minor start_bump_patch test versioninfo 
 
 ############################### Now starting rules ################################
 # Required rule : what's to be done each time 
@@ -140,42 +147,47 @@ all: $(TARGETS)
 
 # Test values of variables - for debug purposes  
 test:
-	@echo "USE_PDFLATEX: $(USE_PDFLATEX)"
+	@echo "USE_PDFLATEX: '$(USE_PDFLATEX)'"
 	@echo "--- Directories --- "
-	@echo "OUTPUT_DIR -> $(OUTPUT_DIR)"
-	@echo "TRASH_DIR  -> $(TRASH_DIR)"
-	@echo "HTML_DIR   -> $(HTML_DIR)"
+	@echo "OUTPUT_DIR   -> '$(OUTPUT_DIR)'"
+	@echo "TRASH_DIR    -> '$(TRASH_DIR)'"
+	@echo "HTML_DIR     -> '$(HTML_DIR)'"
+	@echo "SUPER_DIR    -> '$(SUPER_DIR)'"
+	@echo "RELEASE_DIR  -> '$(RELEASE_DIR)'"
 	@echo "--- Compilation commands --- "
-	@echo "LATEX      -> $(LATEX)"
-	@echo "LATEX2HTML -> $(LATEX2HTML)"
-	@echo "CMDLINE_OPTS -> $(CMDLINE_OPTS)"
-	@echo "LATEX2RTF  -> $(LATEX2RTF)"
-	@echo "BIBTEX     -> $(BIBTEX)"
-	@echo "DVIPS      -> $(DVIPS)"
-	@echo "DVIPDF     -> $(DVIPDF)"
-	@echo "GZIP       -> $(GZIP)"
-	@echo "GRB        -> $(GRB)"
-	@echo "GITFLOW    -> $(GITFLOW)"
+	@echo "LATEX        -> '$(LATEX)'"
+	@echo "LATEX2HTML   -> '$(LATEX2HTML)'"
+	@echo "CMDLINE_OPTS -> '$(CMDLINE_OPTS)'"
+	@echo "LATEX2RTF    -> '$(LATEX2RTF)'"
+	@echo "BIBTEX       -> '$(BIBTEX)'"
+	@echo "DVIPS        -> '$(DVIPS)'"
+	@echo "DVIPDF       -> '$(DVIPDF)'"
+	@echo "GZIP         -> '$(GZIP)'"
+	@echo "GRB          -> '$(GRB)'"
+	@echo "GITFLOW      -> '$(GITFLOW)'"
 	@echo "--- Files --- "
-	@echo "TEX_SRC    -> $(TEX_SRC)"
-	@echo "STYLE_SRC  -> $(STYLE_SRC)"
-	@echo "BIB_SRC    -> $(BIB_SRC)"
-	@echo "MAIN_TEX   -> $(MAIN_TEX)"
-	@echo "FIGURES    -> $(FIGURES)"
-	@echo "DVI        -> $(DVI)"
-	@echo "PS         -> $(PS)"
-	@echo "PS_GZ      -> $(PS_GZ)"
-	@echo "PDF        -> $(PDF)"
-	@echo "RTF        -> $(RTF)"
-	@echo "BACKUP_FILES -> $(BACKUP_FILES)"
-	@echo "TO_MOVE    -> $(TO_MOVE)"
-	@echo "TARGET_PS_GZ -> $(TARGET_PS_GZ)"
-	@echo "TARGET_PDF   -> $(TARGET_PDF)"
+	@echo "TEX_SRC      -> '$(TEX_SRC)'"
+	@echo "STYLE_SRC    -> '$(STYLE_SRC)'"
+	@echo "BIB_SRC      -> '$(BIB_SRC)'"
+	@echo "MAIN_TEX     -> '$(MAIN_TEX)'"
+	@echo "FIGURES      -> '$(FIGURES)'"
+	@echo "DVI          -> '$(DVI)'"
+	@echo "PS           -> '$(PS)'"
+	@echo "PS_GZ        -> '$(PS_GZ)'"
+	@echo "PDF          -> '$(PDF)'"
+	@echo "RTF          -> '$(RTF)'"
+	@echo "BACKUP_FILES -> '$(BACKUP_FILES)'"
+	@echo "TO_MOVE      -> '$(TO_MOVE)'"
+	@echo "TARGET_PS_GZ -> '$(TARGET_PS_GZ)'"
+	@echo "TARGET_PDF   -> '$(TARGET_PDF)'"
 	@echo "--- Main targets --- "
-	@echo "TARGETS      -> $(TARGETS)"
-	@echo "TARGETS_DEPS -> $(TARGETS_DEPS)"
+	@echo "TARGETS      -> '$(TARGETS)'"
+	@echo "TARGETS_DEPS -> '$(TARGETS_DEPS)'"
 	@echo "Consider running 'make versioninfo' to get info on git versionning variables"
 
+############################### Archiving ################################
+archive: clean
+	tar -C ../ -cvzf ../$(SUPER_DIR)-$(VERSION).tar.gz --exclude ".svn" --exclude ".git"  --exclude "*~" --exclude ".DS_Store" --exclude "'$(RELEASE_DIR)/*.pdf'" $(SUPER_DIR)/
 
 ############################### Git Bootstrapping rules ################################
 ifeq ($(GRB),)
@@ -209,7 +221,7 @@ start_bump_patch start_bump_minor start_bump_major release:
 	@echo "Unable to find git-flow on your system. "
 	@echo "See https://github.com/nvie/gitflow for installation details"
 else
-start_bump_patch:
+start_bump_patch: clean
 	@echo "Start the patch release of the repository from $(VERSION) to $(NEXT_PATCH_VERSION)"
 	git pull origin
 	git flow release start $(NEXT_PATCH_VERSION)
@@ -218,7 +230,7 @@ start_bump_patch:
 	@echo "=> remember to update the version number in $(MAIN_TEX)"
 	@echo "=> run 'make release' once you finished the bump"
 
-start_bump_minor:
+start_bump_minor: clean
 	@echo "Start the minor release of the repository from $(VERSION) to $(NEXT_MINOR_VERSION)"
 	git pull origin
 	git flow release start $(NEXT_MINOR_VERSION)
@@ -227,7 +239,7 @@ start_bump_minor:
 	@echo "=> remember to update the version number in $(MAIN_TEX)"
 	@echo "=> run 'make release' once you finished the bump"
 
-start_bump_major:
+start_bump_major: clean
 	@echo "Start the major release of the repository from $(VERSION) to $(NEXT_MAJOR_VERSION)"
 	git pull origin
 	git flow release start $(NEXT_MAJOR_VERSION)
@@ -237,10 +249,22 @@ start_bump_major:
 	@echo "=> run 'make release' once you finished the bump"
 
 
-release: $(TARGET_PDF)
-	@cp $(TARGET_PDF) release/$(TARGET_PDF:%.pdf=%-v$(VERSION).pdf)
-	git add -f release/$(TARGET_PDF:%.pdf=%-v$(VERSION).pdf)
-	git commit -s -m "Add a copy of the generated PDF version $(VERSION) in release/"
+release: clean $(TARGET_PDF)
+	@if [ ! -d $(RELEASE_DIR) ]; then \
+		echo "    /!\ $(RELEASE_DIR)/ does not exist ==> Now creating ./$(RELEASE_DIR)/"; \
+		mkdir -p ./$(RELEASE_DIR); \
+	fi;
+	@for pdf in $(TARGET_PDF); do \
+		targetpdf=`basename $$pdf .pdf`-v$(VERSION).pdf ; \
+		base=`basename $$pdf .pdf`; \
+		cp $$pdf $(RELEASE_DIR)/$$targetpdf; \
+		git add -f $(RELEASE_DIR)/$$targetpdf; \
+		git commit -s -m "Add a copy of version $(VERSION) of $$pdf in $(RELEASE_DIR)/"; \
+	done
+	@if [ -n "$(LIST_RELEASE_TO_DELETE)" ]; then \
+		git rm $(LIST_RELEASE_TO_DELETE); \
+		git commit -s -m "Delete previous release copy $(LIST_RELEASE_TO_DELETE)" $(LIST_RELEASE_TO_DELETE); \
+	fi
 	git flow release finish -s $(VERSION)
 	git push origin
 	git push origin --tags
