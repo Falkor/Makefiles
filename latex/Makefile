@@ -281,7 +281,7 @@ singlerun:
 		if [ $$exit_status -ne 0 ]; then \
 			tail -n 50 `basename $$f .tex`.log; \
 			echo -e "\n\n"; \
-			break; \
+			exit $$exit_status; \
 		fi; \
 	done
 
