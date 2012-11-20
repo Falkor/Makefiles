@@ -204,6 +204,8 @@ setup:
 	git config gitflow.prefix.hotfix     hotfix/
 	git config gitflow.prefix.support    support/
 	git config gitflow.prefix.versiontag $(TAG_PREFIX)
+	git submodule init
+	git submodule update
 endif
 
 versioninfo:
