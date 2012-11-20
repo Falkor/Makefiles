@@ -190,13 +190,9 @@ archive: clean
 	tar -C ../ -cvzf ../$(SUPER_DIR)-$(VERSION).tar.gz --exclude ".svn" --exclude ".git"  --exclude "*~" --exclude ".DS_Store" --exclude "'$(RELEASE_DIR)/*.pdf'" $(SUPER_DIR)/
 
 ############################### Git Bootstrapping rules ################################
-ifeq ($(GRB),)
-setup: 
-	@echo "Unable to find the 'grb' binary. Install it to setup your git repository."
-	@echo "See https://github.com/webmat/git_remote_branch/ for more details"
-else 
 setup:
-	grb grab production
+	git fetch origin
+	git branch --set-upstream production origin/production
 	git config gitflow.branch.master     production
 	git config gitflow.branch.develop    devel
 	git config gitflow.prefix.feature    feature/
@@ -206,7 +202,6 @@ setup:
 	git config gitflow.prefix.versiontag $(TAG_PREFIX)
 	git submodule init
 	git submodule update
-endif
 
 versioninfo:
 	@echo "Current version: $(VERSION)"
