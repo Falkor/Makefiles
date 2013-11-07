@@ -1,19 +1,20 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
+# Time-stamp: <Thu 2013-11-07 16:37 svarrette>
 #
-# --------------------------------------------------------------------------------
-# This is a generic makefile in the sense that it doesn't require to be 
-# modified when adding/removing new source files.
-# --------------------------------------------------------------------------------
-#
-# Author: Sebastien Varrette <Sebastien.Varrette@uni.lu>
-#          Web page : http://www-id.imag.fr/~svarrett/
-# Version : 1.2
-# Creation date : 2012-01-11
-#
-# Please refer to ../Makefile for more informations on compilation options
-# Alternatively, you may try 'make help'
+#     __  __       _         __ _ _       
+#    |  \/  | __ _| | _____ / _(_) | ___  
+#    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
+#    | |  | | (_| |   <  __/  _| | |  __/ 
+#    |_|  |_|\__,_|_|\_\___|_| |_|_|\___| 
 # 
+# Copyright (c) 2011 Sebastien Varrette <Sebastien.Varrette@uni.lu>
+# .             http://varrette.gforge.uni.lu
+#
+####################################################################################
+#
+############################## Variables Declarations ##############################
+
 GNUPLOTFILES       = $(wildcard *.gnuplot)
 GNUPLOT_DATA       = $(wildcard *.dat)
 GNUPLOT_OUTPUT     = $(wildcard *.pdf)
@@ -54,7 +55,7 @@ clean:
     fi
 
 sync: plot
-	rsync -avzu *.pdf $(ARTICLE_IMAGEDIR)/
+	test -d $(ARTICLE_IMAGEDIR) && rsync -avzu *.pdf $(ARTICLE_IMAGEDIR)/
 
 
 #%:
