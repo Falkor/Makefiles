@@ -31,7 +31,7 @@ plot: $(GNUPLOTFILES) $(GNUPLOT_DATA)
 		echo "=> processing the GNUPlot script $$plotscript"; \
 		gnuplot $$plotscript; \
 	done
-	@for f in `ls *.eps`; do epstopdf $$f; done
+	@for f in `ls *.eps`; do epstopdf $$f; rm -f $$f; done
 
 test:
 	@echo "GNUPLOTFILES   = $(GNUPLOTFILES)"
