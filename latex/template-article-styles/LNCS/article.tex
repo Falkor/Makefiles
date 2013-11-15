@@ -1,0 +1,111 @@
+% =============================================================================
+% .tex --
+% Author(s): Sebastien Varrette      <Sebastien.Varrette@uni.lu>
+% .
+% .          Pascal Bouvry           <Pascal.Bouvry@uni.lu>
+% 
+% More information on LaTeX: http://www.latex-project.org/
+% LaTeX symbol list:
+% http://www.ctan.org/tex-archive/info/symbols/comprehensive/symbols-a4.pdf
+% =============================================================================
+% Based on the official llncs2e template
+
+\documentclass{llncs}
+
+\usepackage{_style}
+
+
+\title{My title}
+
+\author{
+  S\'ebastien Varrette$^{1}$,
+  xx and 
+  Pascal Bouvry$^{2}$
+}
+
+\institute{
+  $^{1}$ Computer Science and Communication (CSC) Research Unit\\
+  $^{2}$ Interdisciplinary Centre for Security Reliability and Trust (SnT)\\
+  University of Luxembourg, 6, rue Richard Coudenhove-Kalergi\\
+  L-1359 Luxembourg, Luxembourg\\
+}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+    \input{_abstract}
+\end{abstract}
+
+\begin{keywords}
+    Performance evaluation,
+    Energy-efficiency,
+    HPC,
+    Evolutionary Algorithm,
+    Fault-Tolerance
+    Result-Checking
+\end{keywords}
+
+
+% ===================================
+\section{Introduction}
+\label{sec:introduction}
+\input{_introduction}
+
+% ========================================
+\section{Context \& Motivations}
+\label{sec:context}
+\input{_context}
+
+% ========================================
+\section{Implementation and Experimental Setup}
+\label{sec:implem}\label{sec:experimental_setup}
+\input{_implem}
+
+% ====================================================================
+\section{Validation and Experimental Results}
+\label{sec:experiments}
+\input{_experiments}
+
+% ====================================================================
+\section{Related Work}
+\label{sec:related_works}
+\input{_related_works}
+
+% ====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+\input{_conclusion}
+
+~\\
+{\noindent \textbf{Acknowledgments:}}
+% \\
+The experiments presented in this paper were carried
+out using the HPC facility of the University of Luxembourg.
+%
+% TO DO: Grid5000 acknowledgements.
+% 
+
+% \section{Acronyms used}
+%\input{_acronyms}
+
+\bibliographystyle{abbrv}
+\bibliography{biblio}
+\appendix
+
+%------------------------
+% \section{Acronyms used}
+\input{_acronyms}
+
+\end{document}
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% eof
+%
+% Local Variables:
+% mode: latex
+% mode: flyspell
+% mode: auto-fill
+% fill-column: 80
+% End:
