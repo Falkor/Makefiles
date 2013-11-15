@@ -1,0 +1,3 @@
+[submodule ".submodules/beamerthemeFalkor"]
+	path = .submodules/beamerthemeFalkor
+	url = https://github.com/Falkor/beamerthemeFalkor.git
