@@ -1,0 +1,15 @@
+####################################################################################
+# Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
+#
+# Author: Sebastien Varrette <Sebastien.Varrette@uni.lu>
+#          Web page : http://csc.uni.lu/sebastien.varrette
+#
+# Please refer to ../Makefile for more informations on compilation options
+# Alternatively, you may try 'make help'
+# 
+all:
+	$(MAKE) -C ../
+
+%:
+	$(MAKE) -C ../ $@
+
