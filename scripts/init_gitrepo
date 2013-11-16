@@ -2,7 +2,7 @@
 #################################################################################
 # init_gitrepo - Initialize my git repo with my favorite layout and configuration 
 # Creation : 15 Nov 2013
-# Time-stamp: <Sam 2013-11-16 10:40 svarrette>
+# Time-stamp: <Sam 2013-11-16 11:05 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -99,8 +99,8 @@ DESCRIPTION
       * takes care of my favorite git submodules 
       * initialize README, VERSION file and root Makefile to pilot the default 
         operations on the repository such as: 
-        - `make setup` so that collaborators simply duplicate my configuration
-        - `make start_bump_{major,minor,patch}` and `make release` to bump a new  
+        - 'make setup' so that collaborators simply duplicate my configuration
+        - 'make start_bump_{major,minor,patch}' and 'make release' to bump a new  
            version of the repository and release it 
       * (eventually) bootstrap a LaTeX project, typically the sources of a new 
         research article / book chapter / beamer slides
@@ -147,7 +147,8 @@ COPYRIGHT
     PURPOSE.
 
 SEE ALSO
-    Other scripts are available on my web site http://varrette.gforge.uni.lu
+    This script makes an heavy usage of the makefiles I propose on the Github 
+    project: https://github.com/Falkor/Makefiles/
 EOF
 }
 
@@ -255,6 +256,8 @@ done
 
 info "about to initialize the directory: ${STARTDIR}"
 really_continue
+
+exit 1
 
 # Initialize git-flow
 execute "git flow init "
