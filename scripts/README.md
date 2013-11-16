@@ -12,6 +12,13 @@ Copyright (c) 2013 [Sebastien Varrette](mailto:<Sebastien.Varrette@uni.lu>) [www
 `init_gitrepo` -- Initialize a fresh new (empty) git repo with my favorite
 layout and configuration.
 
+## INSTALLATION
+
+Assuming your `PATH` includes `~/bin`, simply make a symbolic link in this folder: 
+
+    cd ~/bin
+    ln -s /path/to/repo/Makefile/scripts/init_gitrepo .
+
 ## SYNOPSIS
 
     init_gitrepo [-V | -h]
@@ -65,7 +72,8 @@ Initiate a new article for the conference SC'13 (i.e. bootstrap a directory `art
     init_gitrepo --article --name sc13
 
 ## AUTHOR
-    Sebastien Varrette <Sebastien.Varrette@uni.lu> aka [Falkor](https://github.com/Falkor). 
+
+Sebastien Varrette <Sebastien.Varrette@uni.lu> aka [Falkor](https://github.com/Falkor). 
 
 ## REPORTING BUGS
 
