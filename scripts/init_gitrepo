@@ -1,0 +1,435 @@
+#! /bin/bash
+#################################################################################
+# init_gitrepo - Initialize my git repo with my favorite layout and configuration 
+# Creation : 15 Nov 2013
+# Time-stamp: <Sam 2013-11-16 10:40 svarrette>
+#
+# Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
+#               http://varrette.gforge.uni.lu
+# $Id$
+#
+# Description : see the print_help function or launch 'init_gitrepo --help'
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+################################################################################
+
+### Global variables
+VERSION=0.1
+COMMAND=`basename $0`
+VERBOSE=""
+DEBUG=""
+SIMULATION=""
+
+### displayed colors
+COLOR_GREEN="\033[0;32m"
+COLOR_RED="\033[0;31m"
+COLOR_YELLOW="\033[0;33m"
+COLOR_VIOLET="\033[0;35m"
+COLOR_CYAN="\033[0;36m"
+COLOR_BOLD="\033[1m"
+COLOR_BACK="\033[0m"
+
+### Local variables
+STARTDIR="$(pwd)"
+SCRIPTFILENAME=$(basename $0)
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+SUBMODULE_DIR=.submodules
+SUBMODULES=('https://github.com/Falkor/Makefiles' 'https://github.com/Falkor/beamerthemeFalkor.git')
+
+
+REPO_NAME=`basename ${STARTDIR}`
+README='README.md'
+GIT_REMOTE=`git remote -v | grep fetch | awk '{print $2}'`
+
+case "${GIT_REMOTE}" in
+    *gforge*) GIT_HOST="Gforge @ Uni.lu" ;;
+    *github*) GIT_HOST="GitHub";;
+    *) GIT_HOST="UNKNOWN"
+esac
+
+BOOTSTRAP_LATEX=""
+
+
+#######################
+### print functions ###
+#######################
+
+####
+# print version of this program
+##
+print_version() {
+    cat <<EOF
+This is $COMMAND version "$VERSION".
+Copyright (c) 2013 Sebastien Varrette  (http://varrette.gforge.uni.lu)
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+EOF
+}
+
+####
+# print help
+##
+print_help() {
+    less <<EOF
+NAME
+    $COMMAND -- Initialize a fresh new (empty) git repo with my favorite 
+    layout and configuration. 
+
+SYNOPSIS
+    $COMMAND [-V | -h]
+    $COMMAND [--debug] [-v] [-n] 
+    $COMMAND [--debug] [-v] [-n] --article --name sc13
+
+DESCRIPTION
+    $COMMAND takes care of initiating a freshly cloned Git repository the way 
+    I like i.e. 
+      * initialize git-flow and publishing the associated branch remotely
+      * takes care of my favorite git submodules 
+      * initialize README, VERSION file and root Makefile to pilot the default 
+        operations on the repository such as: 
+        - `make setup` so that collaborators simply duplicate my configuration
+        - `make start_bump_{major,minor,patch}` and `make release` to bump a new  
+           version of the repository and release it 
+      * (eventually) bootstrap a LaTeX project, typically the sources of a new 
+        research article / book chapter / beamer slides
+
+OPTIONS
+    --debug
+        Debug mode. Causes $COMMAND to print debugging messages.
+    -h --help
+        Display a help screen and quit.
+    -n --dry-run
+        Simulation mode.
+    -v --verbose
+        Verbose mode.
+    -V --version
+        Display the version number then quit.
+    -a  --with-article  --article
+        Bootstrap an article directory
+    -s  --with-slides
+        Bootstrap a beamer slides directory
+    -b  --with-bookchapter  --with-chapter
+        Bootstrap a boot chapter directory
+    --name NAME
+        for one of the above case, initiate a new directory NAME.   
+
+EXAMPLES
+    Bootstrap the repository:
+         $COMMAND [--debug]
+    
+    Initiate a new article for the conference SC'13 (i.e. bootstrap a directory 
+    articles/2013/sc13):
+         $COMMAND --article --name sc13
+
+AUTHOR
+    Sebastien Varrette <Sebastien.Varrette@uni.lu> aka 
+    [Falkor](https://github.com/Falkor). 
+
+REPORTING BUGS
+    Please report bugs to the Github here:
+         https://github.com/Falkor/Makefiles/issues
+
+COPYRIGHT
+    This is free software; see the source for copying conditions.  There is
+    NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR
+    PURPOSE.
+
+SEE ALSO
+    Other scripts are available on my web site http://varrette.gforge.uni.lu
+EOF
+}
+
+######
+# Print information in the following form: '[$2] $1' ($2=INFO if not submitted)
+# usage: info text [title]
+##
+info() {
+    [ -z "$1" ] && print_error_and_exit "[$FUNCNAME] missing text argument"
+    local text=$1
+    local title=$2
+    # add default title if not submitted but don't print anything
+    [ -n "$text" ] && text="${title:==>} $text"
+    echo -e $text
+}
+debug()   { [ -n "$DEBUG"   ] && info "$1" "[${COLOR_YELLOW}DEBUG${COLOR_BACK}]"; }
+verbose() { [ -n "$VERBOSE" ] && info "$1"; }
+error()   { info "$1" "[${COLOR_RED}ERROR${COLOR_BACK}]"; }
+warning() { info "$1" "[${COLOR_VIOLET}WARNING${COLOR_BACK}]"; }
+print_error_and_exit() {
+    local text=$1
+    [ -z "$1" ] && text=" Bad format"
+    error  "$text. '$COMMAND -h' for help."
+    exit 1
+}
+#####
+# print the strings [ OK ] or [ FAILED ] or [ FAILED ]\n$1
+##
+print_ok()     { echo -e "[   ${COLOR_GREEN}OK${COLOR_BACK}   ]"; }
+print_failed() { echo -e "[ ${COLOR_RED}FAILED${COLOR_BACK} ]"; }
+print_failed_and_exit() {
+    print_failed
+    [ ! -z "$1" ] && echo "$1"
+    exit 1
+}
+
+#########################
+### toolbox functions ###
+#########################
+
+#####
+# execute a local command
+# usage: execute command
+###
+execute() {
+    [ $# -eq 0 ] && print_error_and_exit "[$FUNCNAME] missing command argument"
+    debug "[$FUNCNAME] $*"
+    [ -n "${SIMULATION}" ] && echo "(simulation) $*" || eval $*
+    local exit_status=$?
+    debug "[$FUNCNAME] exit status: $exit_status"
+    return $exit_status
+}
+
+####
+# ask to continue. exit 1 if the answer is no
+# usage: really_continue text
+##
+really_continue() {
+    echo -e -n "[${COLOR_VIOLET}WARNING${COLOR_BACK}] $1 Are you sure you want to continue? [Y|n] "
+    read ans
+    case $ans in
+        n*|N*) exit 1;;
+    esac
+}
+
+###
+# Compute relative path between two absolute directories
+##
+relpath() {
+    #echo "realpath($1)"
+    execute "python -c \"import os.path; print os.path.relpath('$1','${2:-`pwd`}')\""
+}
+
+################################################################################
+################################################################################
+
+# Check for options
+while [ $# -ge 1 ]; do
+    case $1 in
+        -h | --help)    print_help;        exit 0;;
+        -V | --version) print_version;     exit 0;;
+        --debug)         
+            DEBUG="--debug";
+            VERBOSE="--verbose"
+            ;;
+        -v | --verbose)  VERBOSE="--verbose";;
+        -n | --dry-run)  SIMULATION="--dry-run";;
+        -a | --with-article | --article)
+            BOOTSTRAP_LATEX="yes";
+            ARTICLES_DIR='articles'
+            ;;
+        -s | --with-slides)
+            BOOTSTRAP_LATEX="yes";
+            SLIDES_DIR='slides'
+            ;;
+        -b | --with-bookchapter | --with-chapter)
+            BOOTSTRAP_LATEX="yes";
+            BOOKCHAPTER_DIR='bookchapters'
+            ;;
+        --name) shift; NAME="$1";;
+        --*) print_error_and_exit "unrecognized option";;
+    esac
+    shift
+done
+
+info "about to initialize the directory: ${STARTDIR}"
+really_continue
+
+# Initialize git-flow
+execute "git flow init "
+
+git_devel_branch=`git br -a | grep '*' | awk '{print $2}'`
+git_prod_branch=`git br -a | grep prod | awk '{print $1}'`
+
+execute "grb publish ${git_devel_branch}"
+execute "grb publish ${git_prod_branch}"
+execute "git checkout ${git_devel_branch}"
+
+# Initialize README
+if [ ! -f "${README}" ]; then
+    echo '`' ${README} '`' > ${README}
+    cat >> ${README} <<EOF
+Copyright (c) `date +%Y` [Sebastien Varrette](mailto:<Sebastien.Varrette@uni.lu>) [www](http://varrette.gforge.uni.lu)
+
+        Time-stamp: <>
+
+-------------------
+
+# ${REPO_NAME}
+
+## Synopsis
+
+
+
+# Contributing to this repository
+
+## Pre-requisites
+
+### Git
+
+You should become familiar (if not yet) with Git. Consider these resources:
+
+* [Git book](http://book.git-scm.com/index.html)
+* [Github:help](http://help.github.com/mac-set-up-git/)
+* [Git reference](http://gitref.org/)
+
+### git-flow
+
+The Git branching model for this repository follows the guidelines of [gitflow](http://nvie.com/posts/a-successful-git-branching-model/).
+In particular, the central repo (on ${GIT_HOST}) holds two main branches with an infinite lifetime:
+EOF
+
+    echo '* `' ${git_prod_branch} '`: the *production-ready* benchmark data' >> ${README}
+    echo '* `' ${git_devel_branch} '`: the main branch where the latest developments interviene. This is
+  the *default* branch you get when you clone the repo.' >> ${README}
+
+    cat >> ${README} <<EOF
+### Local repository setup
+
+This repository is hosted on out [${GIT_HOST}]().
+Once cloned, initiate the potential git submodules etc. by running:
+
+    $> cd ${REPO_NAME}
+    $> make setup
+
+EOF
+    execute "git add ${README}"
+    execute "git commit -s ${README} -m 'Initialize README'"
+
+else
+    echo "   ... not overwriting ${README} which already exists"
+
+fi
+
+
+# Prepare the submodules
+for submod in ${SUBMODULES[*]}; do
+    submodname=`basename $submod .git`
+    info "bootstrapping Git submodule '${submodname}'"
+    if [ ! -d "./${SUBMODULE_DIR}/${submodname}" ]; then
+        execute "git submodule add ${submod} ${SUBMODULE_DIR}/${submodname}"
+        execute "git commit -s -a -m 'add Git submodule ${submodname}'"
+    else
+        echo "   ... the git submodule '${submodname}' is already setup..."
+    fi
+
+done
+
+
+# Prepare root Makefile
+info "preparing root Makefile"
+if [ ! -f "Makefile" ]; then
+    src_makefile=".submodules/Makefiles/repo/Makefile"
+    [ -f "${src_makefile}" ] && execute "cp ${src_makefile} Makefile"
+    execute "sed -i '' \
+        -e \"s/^GITFLOW_BR_MASTER=production/GITFLOW_BR_MASTER=${git_prod_branch}/\" \
+        -e \"s/^GITFLOW_BR_DEVELOP=devel/GITFLOW_BR_DEVELOP=${git_devel_branch}/\" \
+        Makefile"
+    execute "git add Makefile"
+    execute "git commit -s -m 'Initialize root Makefile for the repo' Makefile"
+else
+    echo  "   ... not overwriting the root Makefile which already exists"
+fi
+
+# Prepare VERSION
+if [ ! -f VERSION ]; then
+    echo '0.0.0' > VERSION
+    execute "git add VERSION"
+    execute "git commit -s -m 'Initialize VERSION file' VERSION"
+    execute "git tag v0.0.0"
+fi
+
+# Bootstrap a LaTeX project
+if [ -n "${BOOTSTRAP_LATEX}" ]; then
+    info "preparing to bootstrap LaTeX..."
+    for d in ${ARTICLES_DIR} ${SLIDES_DIR} ${BOOKCHAPTER_DIR}; do
+        execute "mkdir -p $d"
+        if [ -n "${NAME}" ]; then
+            [ "$d" == "${BOOKCHAPTER_DIR}" ] && subdir="$d/${NAME}" || subdir="$d/`date +%Y`/${NAME}"
+            warning "about to create the directory '$subdir'"
+            echo -e -n "        ... (p) proceed, (c) change the path, (s) skip ? [P|c|s] "
+            read ans
+            case $ans in
+                c*|C*)
+                    echo -n "=> enter the new relative path of the directory to create: "
+                    read subdir
+                    ;;
+                n*|N*|s*|S*) break;;
+            esac
+            execute "mkdir -p $subdir"
+        fi
+        execute "cd $subdir"
+        latex_dir=`pwd`
+        #echo "latex_dir = $latex_dir"
+        #echo "startdir  = $STARTDIR"
+        relpath_rootdir=`python -c "import os.path; print os.path.relpath('${STARTDIR}','${latex_dir}')"`
+        #echo "relpath_rootdir = ${relpath_rootdir}"
+        relpath_makefiles=${relpath_rootdir}/${SUBMODULE_DIR}/Makefiles
+        [ ! -f VERSION ] && execute "ln -sf ${relpath_rootdir}/VERSION ."
+        [ ! -f Makefile ] && execute "ln -sf ${relpath_makefiles}/latex/Makefile ."
+        [ ! -f ".gitignore" ] && execute "cp ${relpath_makefiles}/latex/.gitignore ." || true
+        if [ ! -d ".Trash" ]; then
+            execute "mkdir .Trash"
+            execute "touch .Trash/.empty"
+        fi
+        if [ ! -d "images" ]; then
+            execute "mkdir images"
+            execute "ln -sf ../${relpath_makefiles}/generic/Makefile.insubdir images/Makefile"
+        fi
+        already_git_add=`git ls-files .`
+        if [ -z "${already_git_add}" ]; then
+            execute "git add ${relpath_rootdir}/${subdir}"
+            execute "git commit -s -m 'bootstrap LaTeX directory ${subdir}' ${relpath_rootdir}/${subdir}"
+        else
+            echo "   ... ${subdir} already added to the git repo (?)"
+        fi
+        cat <<EOF
+You can now bootstrap the LaTeX project in '${subdir}' with the following options:
+   0 :           DO NOT bootstrap
+   {1 | ieee} :  boostrap with IEEE style
+   {2 | lncs} :  bootstrap with LNCS stype
+EOF
+        echo -n "Your choice (0 | 1 | 2) ? "
+        read ans
+        case $ans in
+            1 | ie* | IE*) 
+                style=IEEE
+                ;;
+            2 | ln* | LN*) 
+                style=LNCS
+               ;;
+            *) execute "cd -"; break;;
+        esac
+        if [ -n "${style}" ]; then
+            info "bootstrapping with $style style"
+            template_dir="${relpath_makefiles}/latex/example-${style}"
+            execute "cp ${template_dir}/*.tex ."
+            execute "cp ${template_dir}/*.bib ."
+            execute "cp ${template_dir}/*.cls ."
+            execute "cp ${template_dir}/_style.sty ."
+            execute "cp ${template_dir}/images/*.pdf images/"
+        fi
+        execute "cd -"
+    done
+fi
