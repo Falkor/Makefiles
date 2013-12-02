@@ -24,6 +24,7 @@ Assuming your `PATH` includes `~/bin`, simply make a symbolic link in this folde
     init_gitrepo [-V | -h]
     init_gitrepo [--debug] [-v] [-n]
     init_gitrepo [--debug] [-v] [-n] --article --name sc13
+    init_gitrepo [--debug] [-v] [-n] --slides  --name sc13
 
 ## DESCRIPTION
 
@@ -55,7 +56,7 @@ I like i.e.
         Display the version number then quit.
     -a  --with-article  --article
         Bootstrap an article directory
-    -s  --with-slides
+    -s  --with-slides   --slides
         Bootstrap a beamer slides directory
     -b  --with-bookchapter  --with-chapter
         Bootstrap a boot chapter directory
@@ -70,6 +71,11 @@ Bootstrap the repository:
 Initiate a new article for the conference SC'13 (i.e. bootstrap a directory `articles/2013/sc13`):
          
     init_gitrepo --article --name sc13
+
+Initiate new Beamer slides for the conference SC'13 (i.e. bootstrap a directory `slides/2013/sc13`):
+         
+    init_gitrepo --slides --name sc13
+
 
 ## AUTHOR
 
