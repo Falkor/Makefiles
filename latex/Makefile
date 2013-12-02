@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Wed 2012-10-03 15:59 svarrette>
+# Time-stamp: <Ven 2013-11-29 13:59 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  / 
@@ -119,6 +119,8 @@ TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg *.out *.nav *snm *.vrb 
 LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
 LAST_TAG = $(shell git describe --tags $(LAST_TAG_COMMIT) )
 TAG_PREFIX = "v"
+GITFLOW_BR_MASTER=production
+GITFLOW_BR_DEVELOP=master
 
 VERSION  = $(shell [ -f VERSION ] && head VERSION || echo "0.0.1")
 # OR try to guess directly from the last git tag
@@ -192,9 +194,9 @@ archive: clean
 ############################### Git Bootstrapping rules ################################
 setup:
 	git fetch origin
-	git branch --set-upstream production origin/production
-	git config gitflow.branch.master     production
-	git config gitflow.branch.develop    devel
+	git branch --set-upstream $(GITFLOW_BR_MASTER) origin/$(GITFLOW_BR_MASTER)
+	git config gitflow.branch.master     $(GITFLOW_BR_MASTER)
+	git config gitflow.branch.develop    $(GITFLOW_BR_DEVELOP)
 	git config gitflow.prefix.feature    feature/
 	git config gitflow.prefix.release    release/
 	git config gitflow.prefix.hotfix     hotfix/
@@ -263,6 +265,9 @@ release: clean $(TARGET_PDF)
 		git commit -s -m "Delete previous release copy $(LIST_RELEASE_TO_DELETE)" $(LIST_RELEASE_TO_DELETE); \
 	fi
 	git flow release finish -s $(VERSION)
+	git checkout $(GITFLOW_BR_MASTER)
+	git push origin
+	git checkout $(GITFLOW_BR_DEVELOP)
 	git push origin
 	git push origin --tags
 endif
