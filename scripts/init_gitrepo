@@ -1,8 +1,8 @@
 #! /bin/bash
 #################################################################################
-# init_gitrepo - Initialize my git repo with my favorite layout and configuration 
+# init_gitrepo - Initialize my git repo with my favorite layout and configuration
 # Creation : 15 Nov 2013
-# Time-stamp: <Lun 2013-12-02 23:40 svarrette>
+# Time-stamp: <Mar 2013-12-03 21:40 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -46,12 +46,15 @@ SCRIPTFILENAME=$(basename $0)
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 SUBMODULE_DIR=.submodules
-SUBMODULES=('https://github.com/Falkor/Makefiles' 'https://github.com/Falkor/beamerthemeFalkor.git')
-
+SUBMODULES=('https://github.com/Falkor/Makefiles')
 
 REPO_NAME=`basename ${STARTDIR}`
 README='README.md'
-GIT_REMOTE=`git remote -v | grep fetch | awk '{print $2}'`
+if [ -d "${STARTDIR}/.git" ]; then
+    GIT_REMOTE=`git remote -v | grep fetch | awk '{print $2}'`
+else
+    GIT_REMOTE=""
+fi
 
 case "${GIT_REMOTE}" in
     *gforge*) GIT_HOST="Gforge @ Uni.lu" ;;
@@ -60,6 +63,17 @@ case "${GIT_REMOTE}" in
 esac
 
 BOOTSTRAP_LATEX=""
+
+# Octopress stuff
+BOOTSTRAP_OCTOPRESS=""
+OCTOPRESS_CONF='_config.yml'
+OCTOPRESS_DIR=include/octopress
+OCTOPRESS_THEMES_DIR=.themes
+OCTOPRESS_PLUGINS_DIR=plugins
+OCTOPRESS_3RDPARTY_PLUGINS_DIR=include/3rdparty_plugins
+OCTOPRESS_URL="git://github.com/imathis/octopress.git"
+OCTOPRESS_THEMES=( 'https://github.com/Falkor/octopress-bootstrap.git' 'https://github.com/kAworu/octostrap3.git')
+OCTOPRESS_PLUGINS=( 'https://github.com/josephcc/octopress-cumulus.git' )
 
 
 #######################
@@ -84,26 +98,29 @@ EOF
 print_help() {
     less <<EOF
 NAME
-    $COMMAND -- Initialize a fresh new (empty) git repo with my favorite 
-    layout and configuration. 
+    $COMMAND -- Initialize a fresh new (empty) git repo with my favorite
+    layout and configuration.
 
 SYNOPSIS
     $COMMAND [-V | -h]
-    $COMMAND [--debug] [-v] [-n] 
+    $COMMAND [--debug] [-v] [-n]
     $COMMAND [--debug] [-v] [-n] --article --name sc13
+    $COMMAND [--debug] [-v] [-n] --slides  --name sc13
+    $COMMAND [--debug] [-v] [-n] --octopress
 
 DESCRIPTION
-    $COMMAND takes care of initiating a freshly cloned Git repository the way 
-    I like i.e. 
+    $COMMAND takes care of initiating a freshly cloned Git repository the way
+    I like i.e.
       * initialize git-flow and publishing the associated branch remotely
-      * takes care of my favorite git submodules 
-      * initialize README, VERSION file and root Makefile to pilot the default 
-        operations on the repository such as: 
+      * takes care of my favorite git submodules
+      * initialize README, VERSION file and root Makefile to pilot the default
+        operations on the repository such as:
         - 'make setup' so that collaborators simply duplicate my configuration
-        - 'make start_bump_{major,minor,patch}' and 'make release' to bump a new  
-           version of the repository and release it 
-      * (eventually) bootstrap a LaTeX project, typically the sources of a new 
+        - 'make start_bump_{major,minor,patch}' and 'make release' to bump a new
+           version of the repository and release it
+      * (eventually) bootstrap a LaTeX project, typically the sources of a new
         research article / book chapter / beamer slides
+      * (eventually) bootstrap a website based on the Octopress framework
 
 OPTIONS
     --debug
@@ -116,6 +133,8 @@ OPTIONS
         Verbose mode.
     -V --version
         Display the version number then quit.
+    -o --octopress --www
+        Bootstrap an website
     -a  --with-article  --article
         Bootstrap an article directory
     -s  --with-slides
@@ -123,19 +142,20 @@ OPTIONS
     -b  --with-bookchapter  --with-chapter
         Bootstrap a boot chapter directory
     --name NAME
-        for one of the above case, initiate a new directory NAME.   
+        for a LaTeX project, initiate a new directory {articles|slides}/YEAR/NAME.
+        for an Octopress project, set the gemset name
 
 EXAMPLES
     Bootstrap the repository:
          $COMMAND [--debug]
-    
-    Initiate a new article for the conference SC'13 (i.e. bootstrap a directory 
+
+    Initiate a new article for the conference SC'13 (i.e. bootstrap a directory
     articles/2013/sc13):
          $COMMAND --article --name sc13
 
 AUTHOR
-    Sebastien Varrette <Sebastien.Varrette@uni.lu> aka 
-    [Falkor](https://github.com/Falkor). 
+    Sebastien Varrette <Sebastien.Varrette@uni.lu> aka
+    [Falkor](https://github.com/Falkor).
 
 REPORTING BUGS
     Please report bugs to the Github here:
@@ -147,7 +167,7 @@ COPYRIGHT
     PURPOSE.
 
 SEE ALSO
-    This script makes an heavy usage of the makefiles I propose on the Github 
+    This script makes an heavy usage of the makefiles I propose on the Github
     project: https://github.com/Falkor/Makefiles/
 EOF
 }
@@ -162,12 +182,13 @@ info() {
     local title=$2
     # add default title if not submitted but don't print anything
     [ -n "$text" ] && text="${title:==>} $text"
-    echo -e $text
+    echo -e "${COLOR_GREEN}$text${COLOR_BACK}"
 }
-debug()   { [ -n "$DEBUG"   ] && info "$1" "[${COLOR_YELLOW}DEBUG${COLOR_BACK}]"; }
-verbose() { [ -n "$VERBOSE" ] && info "$1"; }
-error()   { info "$1" "[${COLOR_RED}ERROR${COLOR_BACK}]"; }
-warning() { info "$1" "[${COLOR_VIOLET}WARNING${COLOR_BACK}]"; }
+subinfo() { info "$1" "   \__"; }
+debug()   { [ -n "$DEBUG"   ] && echo -e "[${COLOR_YELLOW}DEBUG${COLOR_BACK}] $*" || true; } 
+verbose() { [ -n "$VERBOSE" ] && info $* || true; }
+error()   { echo -e "[${COLOR_RED}ERROR${COLOR_BACK}] $*"; }
+warning() { echo -e "[${COLOR_VIOLET}WARNING${COLOR_BACK}] $*"; }
 print_error_and_exit() {
     local text=$1
     [ -z "$1" ] && text=" Bad format"
@@ -224,18 +245,22 @@ relpath() {
 
 ################################################################################
 ################################################################################
+[ -z "git-flow" ] && print_error_and_exit "Unable to find git-flow on your system - See https://github.com/nvie/gitflow/wiki/Installation"
 
 # Check for options
 while [ $# -ge 1 ]; do
     case $1 in
         -h | --help)    print_help;        exit 0;;
         -V | --version) print_version;     exit 0;;
-        --debug)         
+        --debug)
             DEBUG="--debug";
             VERBOSE="--verbose"
             ;;
         -v | --verbose)  VERBOSE="--verbose";;
         -n | --dry-run)  SIMULATION="--dry-run";;
+        -o | --www | --octopress | --with-www | --with-octopress)
+            BOOTSTRAP_OCTOPRESS="yes"
+            ;;
         -a | --with-article | --article)
             BOOTSTRAP_LATEX="yes";
             ARTICLES_DIR='articles'
@@ -254,19 +279,25 @@ while [ $# -ge 1 ]; do
     shift
 done
 
+
 info "about to initialize the directory: ${STARTDIR}"
 really_continue
 
 # Initialize git-flow
-execute "git flow init "
+execute "git flow init"
 
-git_devel_branch=`git br -a | grep '*' | awk '{print $2}'`
-git_prod_branch=`git br -a | grep prod | awk '{print $1}'`
+git_devel_branch=`git branch -a | grep '*' | awk '{print $2}'`
+git_prod_branch=`git branch -a  | grep -v remote | grep -v '*'`
+[ -n "${NAME}" ] && GEMSET_NAME="${NAME}" || GEMSET_NAME="${REPO_NAME}"
 
-[ -n "${git_devel_branch}" ] && execute "grb publish ${git_devel_branch}"
-if [ -n "${git_prod_branch}" ]; then 
-    execute "grb publish ${git_prod_branch}"
-    execute "git checkout ${git_devel_branch}"
+if [ -n "${GIT_REMOTE}" ]; then
+    [ -n "${git_devel_branch}" ] && execute "grb publish ${git_devel_branch}"
+    if [ -n "${git_prod_branch}" ]; then
+        execute "grb publish ${git_prod_branch}"
+        execute "git checkout ${git_devel_branch}"
+    fi
+else 
+    warning "no Git remote found ${GIT_REMOTE}"
 fi
 
 # Initialize README
@@ -278,36 +309,59 @@ Copyright (c) `date +%Y` [Sebastien Varrette](mailto:<Sebastien.Varrette@uni.lu>
         Time-stamp: <>
 
 -------------------
-
 # ${REPO_NAME}
 
 ## Synopsis
 
+EOF
+    if [ -n "${BOOTSTRAP_LATEX}" ]; then
+        cat >> ${README} <<EOF
+This repository hosts (in particular) LaTeX sources in for which the compilation relies
+on [GNU Make](http://www.gnu.org/software/make/).
 
+You should have a complete working LaTeX environment.
 
-# Contributing to this repository
+EOF
+    fi
+    if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then
+        cat >> ${README}<<EOF
+This repository holds the sources of the [${REPO_NAME}]() website.
+
+The site in itself is generated using the [Octopress](http://octopress.org/)
+framework.
+
+EOF
+    fi 
+    cat >> ${README}<<EOF
+## Local repository setup
+
+This repository is hosted on out [${GIT_HOST}]().
+Once cloned, initiate the potential git submodules etc. by running:
+
+    $> cd ${REPO_NAME}
+    $> make setup
 
 ## Pre-requisites
 
 ### Git
 
-You should become familiar (if not yet) with [Git](http://git-scm.com/). 
+You should become familiar (if not yet) with [Git](http://git-scm.com/).
 Consider these resources:
 
 * [Git book](http://book.git-scm.com/index.html)
 * [Github:help](http://help.github.com/mac-set-up-git/)
 * [Git reference](http://gitref.org/)
 
-At least, you shall configure the following exported variables within your favorite shell (adapt accordingly):  
+At least, you shall configure the following exported variables within your favorite shell (adapt accordingly):
 
-	# Bash configuration
-	# Set your git user info
-	export GIT_AUTHOR_NAME='<firstname> <name>'
-	export GIT_AUTHOR_EMAIL='<email>'
-	export GIT_COMMITTER_NAME="${GIT_AUTHOR_NAME}"
-	export GIT_COMMITTER_EMAIL="${GIT_AUTHOR_EMAIL}"
+    # Bash configuration
+    # Set your git user info
+    export GIT_AUTHOR_NAME='<firstname> <name>'
+    export GIT_AUTHOR_EMAIL='<email>'
+    export GIT_COMMITTER_NAME="\${GIT_AUTHOR_NAME}"
+    export GIT_COMMITTER_EMAIL="\${GIT_AUTHOR_EMAIL}"
 
-You can also use the following commands: 
+You can also use the following commands:
 
     $> git config --global user.name "Your Name Comes Here"
     $> git config --global user.email you@yourdomain.example.com
@@ -318,43 +372,145 @@ You can also use the following commands:
 
 ### git-flow
 
-The Git branching model for this repository follows the guidelines of [gitflow](http://nvie.com/posts/a-successful-git-branching-model/).
-In particular, the central repo (on ${GIT_HOST}) holds two main branches with an infinite lifetime:
+The Git branching model for this repository follows the guidelines of 
+[gitflow](http://nvie.com/posts/a-successful-git-branching-model/).
+In particular, the central repository holds two main branches with an infinite lifetime:
+
+* \`${git_prod_branch}\`: the *production-ready* branch
+* \`${git_devel_branch}\`: the main branch where the latest developments interviene. This is
+  the *default* branch you get when you clone the repo
 
 EOF
-    echo '* `' ${git_prod_branch} '`: the *production-ready* benchmark data' >> ${README}
-    echo '* `' ${git_devel_branch} '`: the main branch where the latest developments interviene. This is
-  the *default* branch you get when you clone the repo.' >> ${README}
+    if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then 
+        cat >> ${README}<<EOF
+### RVM aka Ruby Version Manager
+
+The various operations that can be conducted from this repository are piloted
+from a \`Rakefile\` and assumes you have a running Ruby installation with version \`>= 1.9\`.
+As you will need also to install various ruby gems, you shall install [RVM](https://rvm.io/), 
+typically by:
+
+    $> \curl -L https://get.rvm.io | bash -s stable --ruby=1.9.3
+
+then run:
+
+    $> rvm list known
+    $> rvm install 1.9.3 --default
+    $> ruby -v
+    ruby 1.9.3p286 (2012-10-12 revision 37165) [x86_64-darwin12.2.0]
+
+Then we will isolate the gems to be placed in a [gemset](https://rvm.io/gemsets/basics/) so just run:
+
+    $> rvm --create use default@${GEMSET_NAME}
+
+### Bundler
+
+[Bundler](http://bundler.io/) maintains a consistent environment for ruby applications,
+It tracks an application's code and the rubygems it needs to run, so that an application
+will always have the exact gems (and versions) that it needs to run.
+For that, Bundler relies on two files -- \`Gemfile\`, which describes gem dependencies, and
+\`Gemfile.lock\` for consistensy aspect  to share your code between development, staging and production
+machines.
+
+This repository use this approach to bootstrap [Octopress](http://octopress.org/) and thus you shall run :
+
+    $> gem install bundler
+    $> bundle install
+    $> rake setup
+
+## Underlying Web Framework
+
+This web site is based on [Octopress](http://octopress.org/), a blogging
+framework for hacker.
+
+You have also access to rich CSS assets, in particular:
+
+* [Twitter Bootstrap](http://twitter.github.io/bootstrap/index.html)
+* [Font Awesome](http://fortawesome.github.io/Font-Awesome/)
+
+The syntax to be used in the pages is processed by
+[Kramdown](http://kramdown.rubyforge.org/).
+See [this page](http://kramdown.rubyforge.org/quickref.html) for a quick
+reference on the markdown syntax supported.
+
+## Directory Structure
+
+The directory structure is directly inherited from Octopress.
+
+    ${OCTOPRESS_THEMES_DIR}/        # Placeholder for octopress themes (as git submodules)
+    source/         # Directory for site source files
+      _includes/    # Main layout partials
+        custom/     # <- Customize head, header, navigation, footer, and sidebar here
+        asides/     # Theme sidebar partials
+        post/       # post metadata, sharing & comment partials
+      _layouts/     # layouts for pages, posts & category archives
+    include/        # included configurations / 3rd party plugins etc.
+    plugins/        # octopress plugins
+    public/         # a rack convention and it gets wiped with each generate.
+    _deploy/        #  only created if you're deploying to GitHub pages.
+
+As regards the classical [octopress] variables in \`${OCTOPRESS_CONF}\`, here are some explainations:
+
+    permalink:          # Permalink structure for blog posts
+    destination:        # Directory for generated site files
+    plugins:            # Directory for Jekyll plugins
+    code_dir:           # Directory for code snippets (for include_code plugin)
+    category_dir:       # Directory for generated blog category pages
+
+For more information, just refer to the [octopress documentation](http://octopress.org/docs/)
+
+## Blogging basics
+
+See [official documentation](http://octopress.org/docs/blogging/)
+
+## Generate and preview the web site
+
+    rake generate   # Generates posts and pages into the public directory
+    rake watch      # Watches source/ and sass/ for changes and regenerates
+
+By default, unless you're on Mac, WEBrick is used to visualize the generated site.
+
+### POW (Mac OS only)
+
+[POW](http://pow.cx/) is a great alternative to WEBrick for testing your site locally.
+Installing it is as easy as:
+
+    $> curl get.pow.cx | sh
+
+To make Octopress use POW:
+
+    $> cd ~/.pow
+    $> ln -s ${STARTDIR} ${REPO_NAME}
+
+Then, once the website hase been generated, you can open your brower and go on
+the url \`http://${REPO_NAME}.dev\` to preview (locally) the Octopress site.
+
+In particular, \`rake watch\` under Mac OS assumes this configuration and will open a
+browser on the page \`http://${REPO_NAME}.dev\`
+
+EOF
+    fi
     cat >> ${README} <<EOF
-
-### Local repository setup
-
-This repository is hosted on out [${GIT_HOST}]().
-Once cloned, initiate the potential git submodules etc. by running:
-
-    $> cd ${REPO_NAME}
-    $> make setup
-
 # Advanced information
 
 ## Releasing mechanism
 
-The operation consisting of releasing a new version of this repository is automated by a set of tasks within the 'Makefile'. 
+The operation consisting of releasing a new version of this repository is automated by a set of tasks within the \`Makefile\`.
 
-In this context, a version number have the following format: 
+In this context, a version number have the following format:
 
       <major>.<minor>.<patch>-b<build>
-      
+
 where:
 
-* '< major >' corresponds to the major version number
-* '< minor >' corresponds to the minor version number
-* '< patch >' corresponds to the patching version number
-* '< build >' states the build number _i.e._ the total number of commits within the '${git_devel_branch}' branch. 
-      
-Example: '1.0.0-b28'
+* \`< major >\` corresponds to the major version number
+* \`< minor >\` corresponds to the minor version number
+* \`< patch >\` corresponds to the patching version number
+* \`< build >\` states the build number _i.e._ the total number of commits within the \`${git_devel_branch}\` branch.
 
-The current version number is stored in the file 'VERSION'. __/!\ NEVER MAKE ANY MANUAL CHANGES TO THIS FILE__
+Example: \`1.0.0-b28\`
+
+The current version number is stored in the file \`VERSION\`. __/!\ NEVER MAKE ANY MANUAL CHANGES TO THIS FILE__
 
 For more information on the version, run:
 
@@ -364,13 +520,13 @@ If a new  version number such be bumped, you simply have to run:
 
       $> make start_bump_{major,minor,patch}
 
-This will start the release process for you using 'git-flow'. 
-Probably after that, the first things to do is to change within the main LaTeX document the version number and commit this change. 
-Then, to make the release effective, just run: 
+This will start the release process for you using \`git-flow\`.
+Probably after that, the first things to do is to change within the main LaTeX document the version number and commit this change.
+Then, to make the release effective, just run:
 
       $> make release
 
-it will finish the release using 'git-flow', create the appropriate tag in the '${git_prod_branch}' branch and merge all things the way they should be. 
+it will finish the release using \`git-flow\`, create the appropriate tag in the \`${git_prod_branch}\` branch and merge all things the way they should be.
 
 EOF
     execute "git add ${README}"
@@ -381,8 +537,9 @@ else
 
 fi
 
-
 # Prepare the submodules
+[ -n "${BOOTSTRAP_OCTOPRESS}" ] && SUBMODULES+=('https://github.com/Falkor/www.git')
+[ -n "${SLIDES_DIR}" ]          && SUBMODULES+=('https://github.com/Falkor/beamerthemeFalkor.git')
 for submod in ${SUBMODULES[*]}; do
     submodname=`basename $submod .git`
     info "bootstrapping Git submodule '${submodname}'"
@@ -392,15 +549,14 @@ for submod in ${SUBMODULES[*]}; do
     else
         echo "   ... the git submodule '${submodname}' is already setup..."
     fi
-
 done
-
 
 # Prepare root Makefile
 info "preparing root Makefile"
 if [ ! -f "Makefile" ]; then
     src_makefile=".submodules/Makefiles/repo/Makefile"
     [ -f "${src_makefile}" ] && execute "cp ${src_makefile} Makefile"
+    info "adapt Makefile to the gitflow branches ('${git_prod_branch}' for production, '${git_devel_branch}' for development)"
     execute "sed -i '' \
         -e \"s/^GITFLOW_BR_MASTER=production/GITFLOW_BR_MASTER=${git_prod_branch}/\" \
         -e \"s/^GITFLOW_BR_DEVELOP=devel/GITFLOW_BR_DEVELOP=${git_devel_branch}/\" \
@@ -475,12 +631,12 @@ EOF
         echo -n "Your choice (0 | 1 | 2 | 3) ? "
         read ans
         case $ans in
-            1 | ie* | IE*) 
+            1 | ie* | IE*)
                 style=IEEE
                 ;;
-            2 | ln* | LN*) 
+            2 | ln* | LN*)
                 style=LNCS
-               ;;
+                ;;
             3 | bea*)
                 style=beamerthemeFalkor
                 ;;
@@ -492,16 +648,181 @@ EOF
             execute "cp ${template_dir}/*.tex ."
             execute "cp ${template_dir}/_style.sty ."
             execute "cp ${template_dir}/images/*.pdf images/"
-            if [ "${style} == beamer" ]; then 
+            if [ "${style} == beamer" ]; then
                 relpath_beamertheme=${relpath_rootdir}/${SUBMODULE_DIR}/beamerthemeFalkor
                 execute "ln -sf ${relpath_beamertheme}/beamerthemeFalkor.sty ."
                 execute "cp ${template_dir}/images/*.jpg images/"
                 execute "cp ${template_dir}/images/*.png images/"
-            else 
+            else
                 execute "cp ${template_dir}/*.cls ."
                 execute "cp ${template_dir}/*.bib ."
-            fi 
+            fi
         fi
         execute "cd -"
     done
+fi
+
+# Bootstrap an Octopress project
+if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then
+    info "preparing to bootstrap an Octopress site..."
+    rvm=`which rvm`
+    [ -z "${rvm}" ] && print_error_and_exit "You shall install RVM"
+    info "cloning Octopress reference repository (as Git submodule)"
+    if [ ! -d "./${OCTOPRESS_DIR}" ]; then
+        execute "git submodule add ${OCTOPRESS_URL} ./${OCTOPRESS_DIR}"
+        execute "git commit -s -a -m 'add Octopress as Git submodule'"
+    else 
+        echo "   ... already done"
+    fi
+    relpath_octodir=`python -c "import os.path; print os.path.relpath('${STARTDIR}/${OCTOPRESS_DIR}', '${STARTDIR}/include')"`
+    if [ ! -f "./include/octopress.rake" ]; then 
+        execute "ln -sf ${relpath_octodir}/Rakefile ./include/octopress.rake"
+        execute "git add ./include/octopress.rake"
+        execute "git commit -s -m 'add default octopress Rakefile (for further reference)' ./include/octopress.rake"
+    fi
+
+    # Prepare rvm and ruby stuff
+    [ -f "$HOME/.rvm/scripts/rvm" ] && source $HOME/.rvm/scripts/rvm
+    info "preparing the rvm gemset '${GEMSET_NAME}'"
+    if [ ! -f ".rvmrc" ]; then
+        execute "echo 'rvm --create use default@${GEMSET_NAME}' > .rvmrc"
+        execute "git add .rvmrc"
+        execute "git commit -s -m 'add .rvmrc for this project' .rvmrc"
+    fi
+    if [ -z "${SIMULATION}" ]; then
+        rvm gemset use  --create default@${GEMSET_NAME}
+        info "currently available gems:"
+        execute "gem list"
+    fi
+
+    # Initialize the defaults gems
+    info "install the default Ruby gems"
+    for gem in bundler rake; do
+        execute "gem list | grep ${gem} > /dev/null"
+        gem_present=$?
+        if [ $gem_present -ne 0 ]; then 
+            warning "the gem '${gem}' is not present, thus it will be installed"
+            execute "gem install ${gem}"
+        else 
+            echo "   ... '${gem}' is already installed"
+        fi 
+    done
+
+    # Initialize themes
+    info "initialize Octopress themes"
+    for theme in ${OCTOPRESS_THEMES[*]}; do
+        themename=`basename $theme .git`
+        if [ ! -d "./${OCTOPRESS_THEMES_DIR}/${themename}" ]; then
+            execute "git submodule add ${theme} ${OCTOPRESS_THEMES_DIR}/${themename}"
+            execute "git commit -s -a -m 'add Octopress theme ${themename} as Git submodule' "
+        else
+            echo "   ... the Octopress theme '${themename}' is already setup"
+        fi
+    done
+
+
+    info "bootstrap a working Octopress configuration"
+    # Copy the relevant files for my reference repository
+    for f in Gemfile Gemfile.lock Rakefile .gitignore; do
+        relpath_f="./${SUBMODULE_DIR}/www/$f"
+        if [ -f "${relpath_f}" -a ! -f "${f}" ]; then
+            execute "cp ${relpath_f} ."
+            execute "git add $f"
+            execute "git commit -s -m 'add $f' $f"
+        fi
+    done
+
+    subinfo "apply bundler installation"
+    if [ -f "Gemfile" ]; then
+        execute "bundle install"
+    fi
+
+    # Symlinks to default octopress files
+    for f in config.rb config.ru; do
+        relpath_f="${OCTOPRESS_DIR}/$f"
+        if [ -f "${relpath_f}" -a ! -f "${f}" ]; then
+            subinfo "initialize $f"
+            execute "ln -sf ${relpath_f} ."
+            execute "git add $f"
+            execute "git commit -s -m 'add symlink $f (to the default corresponding octopress file)' $f"
+        fi
+    done
+
+    # copy from default octopress files
+    for f in ${OCTOPRESS_CONF}; do
+        relpath_f="${OCTOPRESS_DIR}/$f"
+        if [ -f "${relpath_f}" -a ! -f "${f}" ]; then
+            subinfo "initialize $f"
+            execute "cp ${relpath_f} ."
+            execute "git add $f"
+            execute "git commit -s -m 'initialize $f (copy of the default octopress file)' $f"
+        fi
+    done
+
+    # Initialize Octopress plugins
+    info "setup Octopress plugins"
+    [ ! -d "./${OCTOPRESS_PLUGINS_DIR}" ] && execute "mkdir -p ${OCTOPRESS_PLUGINS_DIR}"
+    subinfo "initialize default plugins"
+    default_plugins_installed=()
+    for f in ${OCTOPRESS_DIR}/plugins/*; do
+        relpath_octodir=`python -c "import os.path; print os.path.relpath('${STARTDIR}/${OCTOPRESS_DIR}/plugins', '${STARTDIR}/${OCTOPRESS_PLUGINS_DIR}')"`
+        real_f=`basename $f`
+        relpath_f="${OCTOPRESS_PLUGINS_DIR}/${real_f}"
+        if [ ! -f "${relpath_f}" ]; then 
+            execute "ln -sf ${relpath_octodir}/$real_f ${relpath_f}"
+            execute "git add ${relpath_f}"
+            default_plugins_installed+=("${relpath_f}")
+        fi
+    done
+    if [ -n "${default_plugins_installed[*]}" ]; then
+        execute "git commit -s -m 'initialize default Octopress plugins' ${default_plugins_installed[*]}"
+    fi 
+    subinfo "setup third party plugins"
+    for plugin in ${OCTOPRESS_PLUGINS[*]}; do
+        pluginname=`basename $plugin .git`
+        if [ ! -d "./${OCTOPRESS_3RDPARTY_PLUGINS_DIR}/${pluginname}" ]; then
+            execute "git submodule add ${plugin} ${OCTOPRESS_3RDPARTY_PLUGINS_DIR}/${pluginname}"
+            execute "git commit -s -a -m 'add 3rd party Octopress plugin ${pluginname} as Git submodule'"
+        else
+            echo "   ... the Octopress plugin '${pluginname}' is already setup"
+        fi
+        warning ""
+        warning "You will have to manually setup the plugin '${pluginname}'"
+        warning "    -> check '${OCTOPRESS_3RDPARTY_PLUGINS_DIR}/${pluginname}'"
+        warning ""
+    done
+
+    # Complete the _config.yml file with git-flow informations
+    if [ -f "${OCTOPRESS_CONF}" ]; then
+        info "customize ${OCTOPRESS_CONF}"
+        # grep presence of gitflow entry in ${OCTOPRESS_CONF}
+        if [ -z "`grep -e '^:gitflow:' ${OCTOPRESS_CONF}`" ]; then 
+            subinfo "add :gitflow: configuration"
+            cat >> ${OCTOPRESS_CONF} <<EOF
+
+# ---------------------------------------------------------------------
+# /!\ Below are specific configuration for Falkor's Octopress Rakefile 
+#     see https://github.com/Falkor/www/blob/devel/Rakefile
+#
+# As such, the below YAML configurations *ARE NOT* part of the official 
+# Octopress Rakefile
+# ---------------------------------------------------------------------
+#
+# git-flow configuration for the repository
+:gitflow:
+  :branches:
+    :master: ${git_prod_branch}
+    :develop: ${git_devel_branch}
+  :prefix:
+    :feature: `git config --get gitflow.prefix.feature`
+    :release: `git config --get gitflow.prefix.release`
+    :hotfix:  `git config --get gitflow.prefix.hotfix`
+    :support: `git config --get gitflow.prefix.support`
+    :versiontag: `git config --get gitflow.prefix.versiontag`
+
+EOF
+            execute "git commit -s -m 'customize ${OCTOPRESS_CONF} with :gitflow: configuration' ${OCTOPRESS_CONF}" 
+        fi 
+    fi 
+
 fi
