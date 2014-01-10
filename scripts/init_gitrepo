@@ -2,7 +2,7 @@
 #################################################################################
 # init_gitrepo - Initialize my git repo with my favorite layout and configuration
 # Creation : 15 Nov 2013
-# Time-stamp: <Jeu 2013-12-05 11:10 svarrette>
+# Time-stamp: <Mer 2014-01-08 13:05 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -272,6 +272,7 @@ while [ $# -ge 1 ]; do
     case $1 in
         -h | --help)    print_help;        exit 0;;
         -V | --version) print_version;     exit 0;;
+        -r | --remote_sync)  REMOTE_SYNC="yes";;
         --debug)
             DEBUG="--debug";
             VERBOSE="--verbose"
@@ -281,6 +282,7 @@ while [ $# -ge 1 ]; do
         -o | --www | --octopress | --with-www | --with-octopress)
             BOOTSTRAP_OCTOPRESS="yes"
             ;;
+        -l | --latex)  BOOTSTRAP_LATEX="yes";;
         -a | --with-article | --article)
             BOOTSTRAP_LATEX="yes";
             ARTICLES_DIR='articles'
@@ -310,7 +312,7 @@ git_devel_branch=`git branch -a | grep '*' | awk '{print $2}'`
 git_prod_branch=`git branch -a  | grep -v remote | grep -v '*'`
 [ -n "${NAME}" ] && GEMSET_NAME="${NAME}" || GEMSET_NAME="${REPO_NAME}"
 
-if [ -n "${GIT_REMOTE}" ]; then
+if [ -n "${GIT_REMOTE}" -a -n "${REMOTE_SYNC}" ]; then
     [ -n "${git_devel_branch}" ] && execute "grb publish ${git_devel_branch}"
     if [ -n "${git_prod_branch}" ]; then
         execute "grb publish ${git_prod_branch}"
@@ -666,7 +668,7 @@ EOF
             execute "cp ${template_dir}/*.tex ."
             execute "cp ${template_dir}/_style.sty ."
             execute "cp ${template_dir}/images/*.pdf images/"
-            if [ "${style} == beamer" ]; then
+            if [ "${style} == beamerthemeFalkor" ]; then
                 relpath_beamertheme=${relpath_rootdir}/${SUBMODULE_DIR}/beamerthemeFalkor
                 execute "ln -sf ${relpath_beamertheme}/beamerthemeFalkor.sty ."
                 execute "cp ${template_dir}/images/*.jpg images/"
