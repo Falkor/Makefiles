@@ -2,7 +2,7 @@
 #################################################################################
 # init_gitrepo - Initialize my git repo with my favorite layout and configuration
 # Creation : 15 Nov 2013
-# Time-stamp: <Mar 2014-01-28 17:52 svarrette>
+# Time-stamp: <Mar 2014-01-28 21:03 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -262,6 +262,12 @@ git_submodule_add() {
         execute "git commit -s -m 'add Git submodule ${submodname}' .gitmodules ${submoddir}"
     else
         echo "   ... the git submodule '${submodname}' is already setup..."
+        #echo "   -> now updated to the latest version"        
+        # Update the git submodule
+        # execute "pushd ${submoddir}"
+        # execute "git pull origin"
+        # execute "popd"
+        # execute "git commit -s ${submoddir} -m 'Update Git submodule `basename ${submoddir}` to the latest version'"
     fi
 }
 
