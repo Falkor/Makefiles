@@ -2,7 +2,7 @@
 #################################################################################
 # init_gitrepo - Initialize my git repo with my favorite layout and configuration
 # Creation : 15 Nov 2013
-# Time-stamp: <Mer 2014-01-08 13:05 svarrette>
+# Time-stamp: <Mar 2014-01-28 17:52 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -135,11 +135,14 @@ OPTIONS
         Display a help screen and quit.
     -n --dry-run
         Simulation mode.
+    -r --remote_sync
+        Operate a git remote synchronization with remote branch. 
+        By default, all commits are only locals
     -v --verbose
         Verbose mode.
     -V --version
         Display the version number then quit.
-    -o --octopress --www
+    -o --octopress --www  --with-www | --with-octopress
         Bootstrap an website
     -a  --with-article  --article
         Bootstrap an article directory
@@ -313,6 +316,8 @@ git_prod_branch=`git branch -a  | grep -v remote | grep -v '*'`
 [ -n "${NAME}" ] && GEMSET_NAME="${NAME}" || GEMSET_NAME="${REPO_NAME}"
 
 if [ -n "${GIT_REMOTE}" -a -n "${REMOTE_SYNC}" ]; then
+    [ -z "`which grb`" ] && print_error_and_exit "grb is NOT installed -- see https://github.com/webmat/git_remote_branch "
+
     [ -n "${git_devel_branch}" ] && execute "grb publish ${git_devel_branch}"
     if [ -n "${git_prod_branch}" ]; then
         execute "grb publish ${git_prod_branch}"
@@ -648,18 +653,13 @@ You can now bootstrap the LaTeX project in '${subdir}' with the following option
    {2 | lncs}:   bootstrap with LNCS stype
    {3 | beamer}: bootstreap a laTeX Beamer presentation with the Falkor beamer theme
 EOF
-        echo -n "Your choice (0 | 1 | 2 | 3) ? "
+        echo -n "Your choice (0 | 1 | 2 | 3 | 4) ? "
         read ans
         case $ans in
-            1 | ie* | IE*)
-                style=IEEE
-                ;;
-            2 | ln* | LN*)
-                style=LNCS
-                ;;
-            3 | bea*)
-                style=beamerthemeFalkor
-                ;;
+            1 | ie* | IE*)   style=IEEE;;
+            2 | ln* | LN*)   style=LNCS;;
+            3 | acm* | ACM*) style=ACM;;
+            4 | bea*)        style=beamerthemeFalkor;;
             *) execute "cd -"; break;;
         esac
         if [ -n "${style}" ]; then
@@ -668,7 +668,7 @@ EOF
             execute "cp ${template_dir}/*.tex ."
             execute "cp ${template_dir}/_style.sty ."
             execute "cp ${template_dir}/images/*.pdf images/"
-            if [ "${style} == beamerthemeFalkor" ]; then
+            if [ "${style}" == "beamerthemeFalkor" ]; then
                 relpath_beamertheme=${relpath_rootdir}/${SUBMODULE_DIR}/beamerthemeFalkor
                 execute "ln -sf ${relpath_beamertheme}/beamerthemeFalkor.sty ."
                 execute "cp ${template_dir}/images/*.jpg images/"

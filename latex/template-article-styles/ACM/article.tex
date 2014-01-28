@@ -1,0 +1,178 @@
+% =============================================================================
+% .tex --
+% Author(s): Sebastien Varrette      <Sebastien.Varrette@uni.lu>
+% .
+% .          Pascal Bouvry           <Pascal.Bouvry@uni.lu>
+% 
+% More information on LaTeX: http://www.latex-project.org/
+% LaTeX symbol list:
+% http://www.ctan.org/tex-archive/info/symbols/comprehensive/symbols-a4.pdf
+% =============================================================================
+% Based on "sig-alternate.tex" V2.0 May 2012
+% This file should be compiled with V2.5 of "sig-alternate.cls" May 2012
+% 
+% This .tex file (and associated .cls V2.5) produces:
+% 1) The Permission Statement
+% 2) The Conference (location) Info information
+% 3) The Copyright Line with ACM data
+% 4) NO page numbers
+% 
+% Using 'sig-alternate.cls' you have control, however, from within
+% the source .tex file, over both the CopyrightYear
+% (defaulted to 200X) and the ACM Copyright Data
+% (defaulted to X-XXXXX-XX-X/XX/XX).
+% e.g.
+% \CopyrightYear{2007} will cause 2007 to appear in the copyright line.
+% \crdata{0-12345-67-8/90/12} will cause 0-12345-67-8/90/12 to appear in the copyright line.
+% 
+% REMEMBER HOWEVER: After having produced the .bbl file,
+% and prior to final submission, you *NEED* to 'insert'
+% your .bbl file into your source .tex file so as to provide
+% ONE 'self-contained' source file.
+% 
+% ================= IF YOU HAVE QUESTIONS =======================
+% Questions regarding the SIGS styles, SIGS policies and
+% procedures, Conferences etc. should be sent to
+% Adrienne Griscti (griscti@acm.org)
+% 
+% Technical questions _only_ to
+% Gerald Murray (murray@hq.acm.org)
+% ===============================================================
+% 
+% For tracking purposes - this is V2.0 - May 2012
+
+\documentclass{sig-alternate}
+\usepackage{_style}
+
+% cf http://www.acm.org/sigs/publications/sigfaq#a17
+\def\sharedaffiliation{%
+\end{tabular}
+\begin{tabular}{c}}
+  
+\begin{document}
+
+% --- Author Metadata here ---
+\conferenceinfo{SC}{'13 Denver, USA}
+\CopyrightYear{2013} % Allows default copyright year (20XX) to be over-ridden - IF NEED BE.
+% \crdata{0-12345-67-8/90/01}  % Allows default copyright data (0-89791-88-6/97/05) to be over-ridden - IF NEED BE
+% --- End of Author Metadata ---
+
+\title{My title\\ subline title}
+% \subtitle{[Extended Abstract]
+% \titlenote{A full version of this paper is available as
+% \textit{Author's Guide to Preparing ACM SIG Proceedings Using
+% \LaTeX$2_\epsilon$\ and BibTeX} at
+% \texttt{www.acm.org/eaddress.htm}}}
+
+\numberofauthors{5}
+\author{
+% 1st. author
+  \alignauthor
+  S\'ebastien Varrette$^{1}$\\
+  \email{\url{Sebastien.Varrette@uni.lu}}
+  % 2nd. author
+  \alignauthor
+  Mateusz Guzek$^{2}$\\
+  \email{\url{Mateusz.Guzek@uni.lu}}
+  \and
+  % 3rd. author
+  \alignauthor
+  Valentin Plugaru$^{1}$\\
+  \email{\url{Valentin.Plugaru@gmail.com}}
+  %
+  \and  % use '\and' if you need 'another row' of author names
+  % 4th. author
+  \alignauthor
+  Xavier Besseron$^{1}$\\
+  \email{\url{Xavier.Besseron@uni.lu}}
+  % 5th. author
+  \alignauthor
+  Pascal Bouvry$^{1}$\\
+  \email{\url{Pascal.Bouvry@uni.lu}}
+  %
+  \sharedaffiliation
+  \affaddr{$^{1}$Computer Science and Communications (CSC) Research Unit}\\
+  \affaddr{$^{2}$Interdisciplinary Centre for Security Reliability and Trust}\\
+  \affaddr{6, rue Richard Coudenhove-Kalergi}\\
+  \affaddr{L-1359 Luxembourg, Luxembourg}\\
+  % \email{Pascal.Bouvry@uni.lu}
+}
+%\date{24th May 2007}
+\maketitle
+
+\begin{abstract}
+    \input{_abstract}
+\end{abstract}
+
+% A category with the (minimum) three required fields
+%\category{H.4}{Information Systems Applications}{Miscellaneous}
+%\category{D.4.1}{Performance, Analysis & Tools (PAT)}
+% %A category including the fourth, optional field follows...
+\category{D.2.8}{Software Engineering}{Metrics}[complexity measures, performance measures]
+
+\terms{HPC, Performance Evaluation}
+
+\keywords{
+    % Performance evaluation,
+    Keyword1,
+    Keyword2,
+    Keyword3
+}
+
+% ===================================
+\section{Introduction}
+\label{sec:introduction}
+\input{_introduction}
+
+% ========================================
+\section{Context \& Motivations}
+\label{sec:context}
+\input{_context}
+
+% ========================================
+\section{Implementation and Experimental Setup}
+\label{sec:implem}\label{sec:experimental_setup}
+\input{_implem}
+
+% ====================================================================
+\section{Validation and Experimental Results}
+\label{sec:experiments}
+\input{_experiments}
+
+% ====================================================================
+\section{Related Work}
+\label{sec:related_works}
+\input{_related_works}
+
+% ====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+\input{_conclusion}
+
+~\\
+{\noindent \textbf{Acknowledgments:}}
+% \\
+The experiments presented in this paper were carried
+out using the HPC facility of the University of Luxembourg.
+
+\bibliographystyle{abbrv}
+\bibliography{biblio}
+
+\appendix
+
+% \section{Acronyms used}
+\input{_acronyms}
+
+% that's all folks
+\end{document}
+
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% eof
+%
+% Local Variables:
+% mode: latex
+% mode: flyspell
+% mode: auto-fill
+% fill-column: 80
+% End:
