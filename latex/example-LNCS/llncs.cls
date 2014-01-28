@@ -1,1 +1,1 @@
-llncs2e/llncs.cls
+.template/LNCS/llncs.cls
