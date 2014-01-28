@@ -2,7 +2,7 @@
 #################################################################################
 # init_gitrepo - Initialize my git repo with my favorite layout and configuration
 # Creation : 15 Nov 2013
-# Time-stamp: <Mar 2014-01-28 21:49 svarrette>
+# Time-stamp: <Mar 2014-01-28 21:58 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -645,14 +645,7 @@ if [ -n "${BOOTSTRAP_LATEX}" ]; then
             execute "mkdir images"
             execute "ln -sf ../${relpath_makefiles}/generic/Makefile.insubdir images/Makefile"
         fi
-        already_git_add=`git ls-files .`
-        if [ -z "${already_git_add}" ]; then
-            execute "git add ${relpath_rootdir}/${subdir}"
-            execute "git commit -s -m 'bootstrap LaTeX directory ${subdir}' ${relpath_rootdir}/${subdir}"
-        else
-            echo "   ... ${subdir} already added to the git repo (?)"
-        fi
-        cat <<EOF
+       cat <<EOF
 You can now bootstrap the LaTeX project in '${subdir}' with the following options:
    0 :           DO NOT bootstrap
    {1 | ieee}:   boostrap with IEEE style
@@ -691,6 +684,13 @@ EOF
                 echo -e "\t git commit -s ${relpath_makefiles} -m 'update Git submodule Makefile to the latest version'"
             fi
         fi
+        already_git_add=`git ls-files .`
+        if [ -z "${already_git_add}" ]; then
+            execute "git add ${relpath_rootdir}/${subdir}"
+            execute "git commit -s -m 'bootstrap LaTeX directory ${subdir}' ${relpath_rootdir}/${subdir}"
+        else
+            echo "   ... ${subdir} already added to the git repo (?)"
+        fi        
         execute "cd -"
     done
 fi
