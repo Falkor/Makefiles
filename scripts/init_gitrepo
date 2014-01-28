@@ -2,7 +2,7 @@
 #################################################################################
 # init_gitrepo - Initialize my git repo with my favorite layout and configuration
 # Creation : 15 Nov 2013
-# Time-stamp: <Mar 2014-01-28 21:03 svarrette>
+# Time-stamp: <Mar 2014-01-28 21:49 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -136,7 +136,7 @@ OPTIONS
     -n --dry-run
         Simulation mode.
     -r --remote_sync
-        Operate a git remote synchronization with remote branch. 
+        Operate a git remote synchronization with remote branch.
         By default, all commits are only locals
     -v --verbose
         Verbose mode.
@@ -194,7 +194,7 @@ info() {
     echo -e "${COLOR_GREEN}$text${COLOR_BACK}"
 }
 subinfo() { info "$1" "   \__"; }
-debug()   { [ -n "$DEBUG"   ] && echo -e "[${COLOR_YELLOW}DEBUG${COLOR_BACK}] $*" || true; } 
+debug()   { [ -n "$DEBUG"   ] && echo -e "[${COLOR_YELLOW}DEBUG${COLOR_BACK}] $*" || true; }
 verbose() { [ -n "$VERBOSE" ] && info $* || true; }
 error()   { echo -e "[${COLOR_RED}ERROR${COLOR_BACK}] $*"; }
 warning() { echo -e "[${COLOR_VIOLET}WARNING${COLOR_BACK}] $*"; }
@@ -262,7 +262,7 @@ git_submodule_add() {
         execute "git commit -s -m 'add Git submodule ${submodname}' .gitmodules ${submoddir}"
     else
         echo "   ... the git submodule '${submodname}' is already setup..."
-        #echo "   -> now updated to the latest version"        
+        #echo "   -> now updated to the latest version"
         # Update the git submodule
         # execute "pushd ${submoddir}"
         # execute "git pull origin"
@@ -329,7 +329,7 @@ if [ -n "${GIT_REMOTE}" -a -n "${REMOTE_SYNC}" ]; then
         execute "grb publish ${git_prod_branch}"
         execute "git checkout ${git_devel_branch}"
     fi
-else 
+else
     warning "no Git remote found ${GIT_REMOTE}"
 fi
 
@@ -364,7 +364,7 @@ The site in itself is generated using the [Octopress](http://octopress.org/)
 framework.
 
 EOF
-    fi 
+    fi
     cat >> ${README}<<EOF
 ## Local repository setup
 
@@ -405,7 +405,7 @@ You can also use the following commands:
 
 ### git-flow
 
-The Git branching model for this repository follows the guidelines of 
+The Git branching model for this repository follows the guidelines of
 [gitflow](http://nvie.com/posts/a-successful-git-branching-model/).
 In particular, the central repository holds two main branches with an infinite lifetime:
 
@@ -414,13 +414,13 @@ In particular, the central repository holds two main branches with an infinite l
   the *default* branch you get when you clone the repo
 
 EOF
-    if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then 
+    if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then
         cat >> ${README}<<EOF
 ### RVM aka Ruby Version Manager
 
 The various operations that can be conducted from this repository are piloted
 from a \`Rakefile\` and assumes you have a running Ruby installation with version \`>= 1.9\`.
-As you will need also to install various ruby gems, you shall install [RVM](https://rvm.io/), 
+As you will need also to install various ruby gems, you shall install [RVM](https://rvm.io/),
 typically by:
 
     $> \curl -L https://get.rvm.io | bash -s stable --ruby=1.9.3
@@ -577,7 +577,7 @@ for submod in ${SUBMODULES[*]}; do
     submoddir="./${SUBMODULE_DIR}/${submodname}"
     git_submodule_add "$submod" "./${SUBMODULE_DIR}/${submodname}"
 done
-if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then 
+if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then
     info "bootstrap reference setup for Octopress"
     git_submodule_add "${OCTOPRESS_REF_SETUP_URL}"  "./${OCTOPRESS_REF_SETUP_DIR}"
 fi
@@ -656,8 +656,9 @@ if [ -n "${BOOTSTRAP_LATEX}" ]; then
 You can now bootstrap the LaTeX project in '${subdir}' with the following options:
    0 :           DO NOT bootstrap
    {1 | ieee}:   boostrap with IEEE style
-   {2 | lncs}:   bootstrap with LNCS stype
-   {3 | beamer}: bootstreap a laTeX Beamer presentation with the Falkor beamer theme
+   {2 | lncs}:   bootstrap with LNCS style
+   {3 | acm}:    bootstrap with ACM Sig Alternate style
+   {4 | beamer}: bootstreap a laTeX Beamer presentation with the Falkor beamer theme
 EOF
         echo -n "Your choice (0 | 1 | 2 | 3 | 4) ? "
         read ans
@@ -671,17 +672,23 @@ EOF
         if [ -n "${style}" ]; then
             info "bootstrapping with $style style"
             template_dir="${relpath_makefiles}/latex/example-${style}"
-            execute "cp ${template_dir}/*.tex ."
-            execute "cp ${template_dir}/_style.sty ."
-            execute "cp ${template_dir}/images/*.pdf images/"
-            if [ "${style}" == "beamerthemeFalkor" ]; then
-                relpath_beamertheme=${relpath_rootdir}/${SUBMODULE_DIR}/beamerthemeFalkor
-                execute "ln -sf ${relpath_beamertheme}/beamerthemeFalkor.sty ."
-                execute "cp ${template_dir}/images/*.jpg images/"
-                execute "cp ${template_dir}/images/*.png images/"
-            else
-                execute "cp ${template_dir}/*.cls ."
-                execute "cp ${template_dir}/*.bib ."
+            if [ -d "${template_dir}" ]; then
+                execute "cp ${template_dir}/*.tex ."
+                execute "cp ${template_dir}/_style.sty ."
+                execute "cp ${template_dir}/images/*.pdf images/"
+                if [ "${style}" == "beamerthemeFalkor" ]; then
+                    relpath_beamertheme=${relpath_rootdir}/${SUBMODULE_DIR}/beamerthemeFalkor
+                    execute "ln -sf ${relpath_beamertheme}/beamerthemeFalkor.sty ."
+                    execute "cp ${template_dir}/images/*.jpg images/"
+                    execute "cp ${template_dir}/images/*.png images/"
+                else
+                    execute "cp ${template_dir}/*.cls ."
+                    execute "cp ${template_dir}/*.bib ."
+                fi
+            else 
+                echo "the directory '${template_dir}' does not exist. You shall update the Git submodule ${relpath_makefiles}. You shall run: "
+                echo -e "\t pushd ${relpath_makefiles} && git pull origin && popd"
+                echo -e "\t git commit -s ${relpath_makefiles} -m 'update Git submodule Makefile to the latest version'"
             fi
         fi
         execute "cd -"
@@ -698,7 +705,7 @@ if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then
     git_submodule_add "${OCTOPRESS_URL}" "./${OCTOPRESS_DIR}"
 
     relpath_octodir=`python -c "import os.path; print os.path.relpath('${STARTDIR}/${OCTOPRESS_DIR}', '${STARTDIR}/include')"`
-    if [ ! -f "./include/octopress.rake" ]; then 
+    if [ ! -f "./include/octopress.rake" ]; then
         execute "ln -sf ${relpath_octodir}/Rakefile ./include/octopress.rake"
         execute "git add ./include/octopress.rake"
         execute "git commit -s -m 'add default octopress Rakefile (for further reference)' ./include/octopress.rake"
@@ -723,12 +730,12 @@ if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then
     for gem in bundler rake; do
         execute "gem list | grep ${gem} > /dev/null"
         gem_present=$?
-        if [ $gem_present -ne 0 ]; then 
+        if [ $gem_present -ne 0 ]; then
             warning "the gem '${gem}' is not present, thus it will be installed"
             execute "gem install ${gem}"
-        else 
+        else
             echo "   ... '${gem}' is already installed"
-        fi 
+        fi
     done
 
     info "bootstrap a working Octopress configuration (Rakefile and stuff)"
@@ -748,7 +755,7 @@ if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then
     fi
 
     # Now rely on my Rakefile to complete the configuration
-    if [ -f Rakefile ]; then 
+    if [ -f Rakefile ]; then
         info "now rely on the Rakefile to finalize the Octopress setup"
         execute "rake setup"
     fi
@@ -762,16 +769,16 @@ if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then
 
 
 
-#     # Symlinks to default octopress files
-#     for f in config.rb config.ru; do
-#         relpath_f="${OCTOPRESS_DIR}/$f"
-#         if [ -f "${relpath_f}" -a ! -f "${f}" ]; then
-#             subinfo "initialize $f"
-#             execute "ln -sf ${relpath_f} ."
-#             execute "git add $f"
-#             execute "git commit -s -m 'add symlink $f (to the default corresponding octopress file)' $f"
-#         fi
-#     done
+    #     # Symlinks to default octopress files
+    #     for f in config.rb config.ru; do
+    #         relpath_f="${OCTOPRESS_DIR}/$f"
+    #         if [ -f "${relpath_f}" -a ! -f "${f}" ]; then
+    #             subinfo "initialize $f"
+    #             execute "ln -sf ${relpath_f} ."
+    #             execute "git add $f"
+    #             execute "git commit -s -m 'add symlink $f (to the default corresponding octopress file)' $f"
+    #         fi
+    #     done
 
     # copy from default octopress files
     # for f in ${OCTOPRESS_CONF}; do
@@ -793,7 +800,7 @@ if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then
     #     relpath_octodir=`python -c "import os.path; print os.path.relpath('${STARTDIR}/${OCTOPRESS_DIR}/plugins', '${STARTDIR}/${OCTOPRESS_PLUGINS_DIR}')"`
     #     real_f=`basename $f`
     #     relpath_f="${OCTOPRESS_PLUGINS_DIR}/${real_f}"
-    #     if [ ! -f "${relpath_f}" ]; then 
+    #     if [ ! -f "${relpath_f}" ]; then
     #         execute "ln -sf ${relpath_octodir}/$real_f ${relpath_f}"
     #         execute "git add ${relpath_f}"
     #         default_plugins_installed+=("${relpath_f}")
@@ -801,54 +808,54 @@ if [ -n "${BOOTSTRAP_OCTOPRESS}" ]; then
     # done
     # if [ -n "${default_plugins_installed[*]}" ]; then
     #     execute "git commit -s -m 'initialize default Octopress plugins' ${default_plugins_installed[*]}"
-    # fi 
-#     subinfo "setup third party plugins"
-#     for plugin in ${OCTOPRESS_PLUGINS[*]}; do
-#         pluginname=`basename $plugin .git`
-#         if [ ! -d "./${OCTOPRESS_3RDPARTY_PLUGINS_DIR}/${pluginname}" ]; then
-#             execute "git submodule add ${plugin} ${OCTOPRESS_3RDPARTY_PLUGINS_DIR}/${pluginname}"
-#             execute "git commit -s -a -m 'add 3rd party Octopress plugin ${pluginname} as Git submodule'"
-#         else
-#             echo "   ... the Octopress plugin '${pluginname}' is already setup"
-#         fi
-#         warning ""
-#         warning "You will have to manually setup the plugin '${pluginname}'"
-#         warning "    -> check '${OCTOPRESS_3RDPARTY_PLUGINS_DIR}/${pluginname}'"
-#         warning ""
-#     done
+    # fi
+    #     subinfo "setup third party plugins"
+    #     for plugin in ${OCTOPRESS_PLUGINS[*]}; do
+    #         pluginname=`basename $plugin .git`
+    #         if [ ! -d "./${OCTOPRESS_3RDPARTY_PLUGINS_DIR}/${pluginname}" ]; then
+    #             execute "git submodule add ${plugin} ${OCTOPRESS_3RDPARTY_PLUGINS_DIR}/${pluginname}"
+    #             execute "git commit -s -a -m 'add 3rd party Octopress plugin ${pluginname} as Git submodule'"
+    #         else
+    #             echo "   ... the Octopress plugin '${pluginname}' is already setup"
+    #         fi
+    #         warning ""
+    #         warning "You will have to manually setup the plugin '${pluginname}'"
+    #         warning "    -> check '${OCTOPRESS_3RDPARTY_PLUGINS_DIR}/${pluginname}'"
+    #         warning ""
+    #     done
 
-#     # Complete the _config.yml file with git-flow informations
-#     if [ -f "${OCTOPRESS_CONF}" ]; then
-#         info "customize ${OCTOPRESS_CONF}"
-#         # grep presence of gitflow entry in ${OCTOPRESS_CONF}
-#         if [ -z "`grep -e '^:gitflow:' ${OCTOPRESS_CONF}`" ]; then 
-#             subinfo "add :gitflow: configuration"
-#             cat >> ${OCTOPRESS_CONF} <<EOF
+    #     # Complete the _config.yml file with git-flow informations
+    #     if [ -f "${OCTOPRESS_CONF}" ]; then
+    #         info "customize ${OCTOPRESS_CONF}"
+    #         # grep presence of gitflow entry in ${OCTOPRESS_CONF}
+    #         if [ -z "`grep -e '^:gitflow:' ${OCTOPRESS_CONF}`" ]; then
+    #             subinfo "add :gitflow: configuration"
+    #             cat >> ${OCTOPRESS_CONF} <<EOF
 
-# # ---------------------------------------------------------------------
-# # /!\ Below are specific configuration for Falkor's Octopress Rakefile 
-# #     see https://github.com/Falkor/www/blob/devel/Rakefile
-# #
-# # As such, the below YAML configurations *ARE NOT* part of the official 
-# # Octopress Rakefile
-# # ---------------------------------------------------------------------
-# #
-# # git-flow configuration for the repository
-# :gitflow:
-#   :branches:
-#     :master: ${git_prod_branch}
-#     :develop: ${git_devel_branch}
-#   :prefix:
-#     :feature: `git config --get gitflow.prefix.feature`
-#     :release: `git config --get gitflow.prefix.release`
-#     :hotfix:  `git config --get gitflow.prefix.hotfix`
-#     :support: `git config --get gitflow.prefix.support`
-#     :versiontag: `git config --get gitflow.prefix.versiontag`
+    # # ---------------------------------------------------------------------
+    # # /!\ Below are specific configuration for Falkor's Octopress Rakefile
+    # #     see https://github.com/Falkor/www/blob/devel/Rakefile
+    # #
+    # # As such, the below YAML configurations *ARE NOT* part of the official
+    # # Octopress Rakefile
+    # # ---------------------------------------------------------------------
+    # #
+    # # git-flow configuration for the repository
+    # :gitflow:
+    #   :branches:
+    #     :master: ${git_prod_branch}
+    #     :develop: ${git_devel_branch}
+    #   :prefix:
+    #     :feature: `git config --get gitflow.prefix.feature`
+    #     :release: `git config --get gitflow.prefix.release`
+    #     :hotfix:  `git config --get gitflow.prefix.hotfix`
+    #     :support: `git config --get gitflow.prefix.support`
+    #     :versiontag: `git config --get gitflow.prefix.versiontag`
 
-# EOF
-#             execute "git commit -s -m 'customize ${OCTOPRESS_CONF} with :gitflow: configuration' ${OCTOPRESS_CONF}" 
-#         fi 
-#     fi 
+    # EOF
+    #             execute "git commit -s -m 'customize ${OCTOPRESS_CONF} with :gitflow: configuration' ${OCTOPRESS_CONF}"
+    #         fi
+    #     fi
 
     warning ""
     warning " You shall now reload the RVM configuration by running: "
