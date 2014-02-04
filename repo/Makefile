@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Lun 2013-03-11 23:13 svarrette>
+# Time-stamp: <Mar 2014-02-04 15:30 svarrette>
 #     __  __       _         __ _ _       
 #    |  \/  | __ _| | _____ / _(_) | ___  
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -135,6 +135,9 @@ endif
 clean:
 	@echo nothing to be cleaned for the moment
 
+# Upgrade the Git submodules etc. to the latest version
+upgrade: 
+	git submodule foreach 'git fetch origin; git checkout $(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
 
 # # force recompilation
 # force :
