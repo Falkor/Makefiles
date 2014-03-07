@@ -137,7 +137,7 @@ clean:
 
 # Upgrade the Git submodules etc. to the latest version
 upgrade: 
-	git submodule foreach 'git fetch origin; git checkout $(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
+	git submodule foreach 'git fetch origin; git checkout $(shell git rev-parse --abbrev-ref HEAD); git reset --hard origin/$(shell git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
 
 # # force recompilation
 # force :

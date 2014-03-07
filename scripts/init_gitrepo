@@ -2,7 +2,7 @@
 #################################################################################
 # init_gitrepo - Initialize my git repo with my favorite layout and configuration
 # Creation : 15 Nov 2013
-# Time-stamp: <Mar 2014-01-28 21:58 svarrette>
+# Time-stamp: <Mar 2014-02-25 21:05 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -660,6 +660,7 @@ EOF
             2 | ln* | LN*)   style=LNCS;;
             3 | acm* | ACM*) style=ACM;;
             4 | bea*)        style=beamerthemeFalkor;;
+            5 | pro*)        style=proposal;;
             *) execute "cd -"; break;;
         esac
         if [ -n "${style}" ]; then
