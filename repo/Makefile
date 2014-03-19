@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mer 2014-03-19 14:33 svarrette>
+# Time-stamp: <Mer 2014-03-19 15:26 svarrette>
 #     __  __       _         __ _ _       
 #    |  \/  | __ _| | _____ / _(_) | ___  
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -153,7 +153,7 @@ update:
 	git submodule update
 
 upgrade: update
-	git submodule foreach 'git fetch origin; git checkout $(shell git rev-parse --abbrev-ref HEAD); git reset --hard origin/$(shell git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
+	git submodule foreach 'git fetch origin; git checkout $$(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
 
 
 ### Git subtree management 
