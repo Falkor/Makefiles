@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mer 2014-03-19 14:30 svarrette>
+# Time-stamp: <Mer 2014-03-19 14:33 svarrette>
 #     __  __       _         __ _ _       
 #    |  \/  | __ _| | _____ / _(_) | ___  
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -90,8 +90,7 @@ setup:
 	git config gitflow.prefix.hotfix     hotfix/
 	git config gitflow.prefix.support    support/
 	git config gitflow.prefix.versiontag $(TAG_PREFIX)
-	git submodule init
-	git submodule update
+	$(MAKE) update 
 	$(if $(GIT_SUBTREE_REPOS), $(MAKE) subtree_setup)
 
 fetch:
@@ -149,7 +148,11 @@ release: clean
 endif
 
 ### Git submodule management: upgrade to the latest version
-upgrade: 
+update:
+	git submodule init
+	git submodule update
+
+upgrade: update
 	git submodule foreach 'git fetch origin; git checkout $(shell git rev-parse --abbrev-ref HEAD); git reset --hard origin/$(shell git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
 
 
