@@ -113,7 +113,7 @@ endif
 BACKUP_FILES = $(shell find . -name "*~")
 # Files to move to $(TRASH_DIR) after compilation
 # Never add *.tex (or any reference to source files) for this variable.
-TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg *.out *.nav *snm *.vrb *.rel
+TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg *.out *.nav *snm *.vrb *.rel *.thm
 
 # Git stuff management
 LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
