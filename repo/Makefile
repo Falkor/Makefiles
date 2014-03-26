@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mer 2014-03-19 15:26 svarrette>
+# Time-stamp: <Mer 2014-03-26 17:16 svarrette>
 #     __  __       _         __ _ _       
 #    |  \/  | __ _| | _____ / _(_) | ___  
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -154,6 +154,9 @@ update:
 
 upgrade: update
 	git submodule foreach 'git fetch origin; git checkout $$(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
+	@for submoddir in $(shell git submodule status | awk '{ print $$2 }' | xargs echo); do \
+		git commit -s -m "Upgrading Git submodule '$$submoddir' to the latest version" $$submoddir;\
+	done
 
 
 ### Git subtree management 
