@@ -2,7 +2,7 @@
 #################################################################################
 # init_gitrepo - Initialize my git repo with my favorite layout and configuration
 # Creation : 15 Nov 2013
-# Time-stamp: <Mar 2014-02-25 21:05 svarrette>
+# Time-stamp: <Ven 2014-03-28 10:48 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -50,10 +50,15 @@ SUBMODULES=("https://github.com/Falkor/Makefiles")
 
 REPO_NAME=`basename ${STARTDIR}`
 README='README.md'
+GIT_REMOTE=""
+GIT_CURRENT_BRANCH=""
+GIT_DIRTY=""
+GITFLOW_PREFIX_FEATURE=""
 if [ -d "${STARTDIR}/.git" ]; then
     GIT_REMOTE=`git remote -v | grep fetch | awk '{print $2}'`
-else
-    GIT_REMOTE=""
+    GIT_CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
+    GIT_DIRTY=`git diff --shortstat 2> /dev/null | tail -n1`
+    GITFLOW_PREFIX_FEATURE=`git config --get gitflow.prefix.feature`
 fi
 
 case "${GIT_REMOTE}" in
@@ -66,6 +71,8 @@ MAKEFILES_REF_DIR="${SUBMODULE_DIR}/Makefiles"
 
 # LaTeX project stuff
 BOOTSTRAP_LATEX=""
+BOOTSTRAP_FNR_PROPOSAL=""
+FNR_TEMPLATE_DIR="${SUBMODULE_DIR}/fnr-latex-template"
 
 # Octopress project stuff
 BOOTSTRAP_OCTOPRESS=""
@@ -112,6 +119,7 @@ SYNOPSIS
     $COMMAND [--debug] [-v] [-n]
     $COMMAND [--debug] [-v] [-n] --article --name sc13
     $COMMAND [--debug] [-v] [-n] --slides  --name sc13
+    $COMMAND [--debug] [-v] [-n] --fnr
     $COMMAND [--debug] [-v] [-n] --octopress
 
 DESCRIPTION
@@ -126,6 +134,7 @@ DESCRIPTION
            version of the repository and release it
       * (eventually) bootstrap a LaTeX project, typically the sources of a new
         research article / book chapter / beamer slides
+      * (eventually) bootstrap an FNR proposal
       * (eventually) bootstrap a website based on the Octopress framework
 
 OPTIONS
@@ -150,6 +159,8 @@ OPTIONS
         Bootstrap a beamer slides directory
     -b  --with-bookchapter  --with-chapter
         Bootstrap a boot chapter directory
+    --fnr
+        Bootstrap an FNR proposal
     --name NAME
         for a LaTeX project, initiate a new directory {articles|slides}/YEAR/NAME.
         for an Octopress project, set the gemset name
@@ -161,6 +172,11 @@ EXAMPLES
     Initiate a new article for the conference SC'13 (i.e. bootstrap a directory
     articles/2013/sc13):
          $COMMAND --article --name sc13
+
+    Initiate a new FNR CORE proposal (i.e. bootstrap a directory
+    proposal):
+         $COMMAND --fnr
+
 
 AUTHOR
     Sebastien Varrette <Sebastien.Varrette@uni.lu> aka
@@ -291,6 +307,10 @@ while [ $# -ge 1 ]; do
         -o | --www | --octopress | --with-www | --with-octopress)
             BOOTSTRAP_OCTOPRESS="yes"
             ;;
+        --fnr)
+            BOOTSTRAP_LATEX="yes";
+            PROPOSAL_DIR='project_proposal';
+            BOOTSTRAP_FNR_PROPOSAL="yes";;
         -l | --latex)  BOOTSTRAP_LATEX="yes";;
         -a | --with-article | --article)
             BOOTSTRAP_LATEX="yes";
@@ -572,6 +592,8 @@ fi
 
 # Prepare the Git submodules
 [ -n "${SLIDES_DIR}" ]  && SUBMODULES+=('https://github.com/Falkor/beamerthemeFalkor.git')
+[ -n "${BOOTSTRAP_FNR_PROPOSAL}" ]  && SUBMODULES+=('https://github.com/Falkor/fnr-latex-template.git')
+
 for submod in ${SUBMODULES[*]}; do
     submodname=`basename $submod .git`
     submoddir="./${SUBMODULE_DIR}/${submodname}"
@@ -608,35 +630,82 @@ fi
 
 # Bootstrap a LaTeX project
 if [ -n "${BOOTSTRAP_LATEX}" ]; then
-    info "preparing to bootstrap LaTeX..."
-    [ -z "${NAME}" ] &&  print_error_and_exit "You shall precise a name for the directory with --name"
-    for d in ${ARTICLES_DIR} ${SLIDES_DIR} ${BOOKCHAPTER_DIR}; do
-        execute "mkdir -p $d"
-        if [ -n "${NAME}" ]; then
-            [ "$d" == "${BOOKCHAPTER_DIR}" ] && subdir="$d/${NAME}" || subdir="$d/`date +%Y`/${NAME}"
-            warning "about to create the directory '$subdir'"
-            echo -e -n "        ... (p) proceed, (c) change the path, (s) skip ? [P|c|s] "
-            read ans
-            case $ans in
-                c*|C*)
-                    echo -n "=> enter the new relative path of the directory to create: "
-                    read subdir
-                    ;;
-                n*|N*|s*|S*) break;;
-            esac
-            execute "git feature start ${NAME}"
-            execute "mkdir -p $subdir"
-            execute "cd $subdir"
-        fi
+    [ -z "${BOOTSTRAP_FNR_PROPOSAL}" ] && info "preparing to bootstrap LaTeX..." || info "preparing to bootstrap an FNR proposal "
+    [ -z "${BOOTSTRAP_FNR_PROPOSAL}" ] && [ -z "${NAME}" ] &&  print_error_and_exit "You shall precise a name for the directory with --name"
+    for d in ${PROPOSAL_DIR}  ${ARTICLES_DIR} ${SLIDES_DIR} ${BOOKCHAPTER_DIR}; do
+        #execute "mkdir -p $d"
+
+        subdir="$d/`date +%Y`/${NAME}"
+        [ "$d" == "${BOOKCHAPTER_DIR}" ] && subdir="$d/${NAME}"
+        [ "$d" == "${PROPOSAL_DIR}" ]    && subdir="$d"
+        warning "about to create the directory '$subdir'"
+        echo -e -n "        ... (p) proceed, (c) change the path, (s) skip ? [P|c|s] "
+        read ans
+        case $ans in
+            c*|C*)
+                echo -n "=> enter the new relative path of the directory to create: "
+                read subdir
+                ;;
+            n*|N*|s*|S*) break;;
+        esac
+        if [ -z "${BOOTSTRAP_FNR_PROPOSAL}" ] && [ -n "${NAME}" ]; then 
+            if [ "${GIT_CURRENT_BRANCH}" != "${GITFLOW_PREFIX_FEATURE}${NAME}" ]; then
+                execute "git flow feature start ${NAME}"
+                [ $? -ne 0 ] && exit 1
+            fi
+        fi 
+        execute "mkdir -p $subdir"
+        execute "cd $subdir"
         latex_dir=`pwd`
         #echo "latex_dir = $latex_dir"
         #echo "startdir  = $STARTDIR"
         relpath_rootdir=`python -c "import os.path; print os.path.relpath('${STARTDIR}','${latex_dir}')"`
         #echo "relpath_rootdir = ${relpath_rootdir}"
+
+        if [ -n "${BOOTSTRAP_FNR_PROPOSAL}" ]; then
+            relpath_template=${relpath_rootdir}/${FNR_TEMPLATE_DIR}
+            cat <<EOF
+You can now bootstrap and FNR Project proposal in '${subdir}' with the following options:
+   0 : DO NOT bootstrap
+   1 : AFR Postdoc
+   2 : AFR PhD
+   3 : CORE
+   4 : INTER CHRIST-ERA
+EOF
+            echo -n "Your choice (0 | 1 | 2 | 3 | 4) ? "
+            read ans
+            case $ans in
+                1 | po* | PO*)       src_template='AFR/Postdoc';;
+                2 | ph* | Ph* | PH*) src_template='AFR/PhD';;
+                3 | co* | CO*)       src_template='CORE';;
+                4 | int* | INT*)     src_template='INTER/CRIST-ERA';;
+                *) execute "cd -"; break;;
+            esac
+            if [ "${GIT_CURRENT_BRANCH}" != "${GITFLOW_PREFIX_FEATURE}${src_template}" ]; then
+                execute "git flow feature start ${src_template}"
+                [ $? -ne 0 ] && exit 1
+            fi
+            #echo "src_template = ${relpath_template}/${src_template}"
+            info "bootstrapping the directory '${subdir}' using the ${src_template} template"
+            execute "rsync -avzu  ${relpath_template}/${src_template}/ ."
+            execute "git add Makefile official_forms"
+            execute "git commit -s -m 'Bootstrap official FNR forms and documents for the proposal' official_forms"
+            execute "git commit -s -m 'Bootstrap main Makefile for the full proposal generation'    Makefile"
+            execute "cd src"
+            latex_dir=`pwd`
+            relpath_rootdir=`python -c "import os.path; print os.path.relpath('${STARTDIR}','${latex_dir}')"`
+            if [ -d "project_description" ]; then
+                execute "ln -s ../images project_description/images"
+            fi
+            execute "rm -f Makefile VERSION _acronyms.tex biblio.bib"
+            execute "touch biblio.bib"
+        fi
+
         relpath_makefiles=${relpath_rootdir}/${MAKEFILES_REF_DIR}
-        [ ! -f VERSION ] && execute "ln -sf ${relpath_rootdir}/VERSION ."
+        [ ! -f VERSION ]  && execute "ln -sf ${relpath_rootdir}/VERSION ."
         [ ! -f Makefile ] && execute "ln -sf ${relpath_makefiles}/latex/Makefile ."
-        [ ! -f ".gitignore" ] && execute "cp ${relpath_makefiles}/latex/.gitignore ." || true
+        [ ! -f '_acronyms.tex' ] && execute "cp ${relpath_makefiles}/latex/_acronyms.tex ."
+        [ ! -f ".gitignore" ]    && execute "cp ${relpath_makefiles}/latex/.gitignore ." || true
         if [ ! -d ".Trash" ]; then
             execute "mkdir .Trash"
             execute "touch .Trash/.empty"
@@ -645,7 +714,8 @@ if [ -n "${BOOTSTRAP_LATEX}" ]; then
             execute "mkdir images"
             execute "ln -sf ../${relpath_makefiles}/generic/Makefile.insubdir images/Makefile"
         fi
-       cat <<EOF
+        if [ -z "${BOOTSTRAP_FNR_PROPOSAL}" ]; then
+            cat <<EOF
 You can now bootstrap the LaTeX project in '${subdir}' with the following options:
    0 :           DO NOT bootstrap
    {1 | ieee}:   boostrap with IEEE style
@@ -653,36 +723,37 @@ You can now bootstrap the LaTeX project in '${subdir}' with the following option
    {3 | acm}:    bootstrap with ACM Sig Alternate style
    {4 | beamer}: bootstreap a laTeX Beamer presentation with the Falkor beamer theme
 EOF
-        echo -n "Your choice (0 | 1 | 2 | 3 | 4) ? "
-        read ans
-        case $ans in
-            1 | ie* | IE*)   style=IEEE;;
-            2 | ln* | LN*)   style=LNCS;;
-            3 | acm* | ACM*) style=ACM;;
-            4 | bea*)        style=beamerthemeFalkor;;
-            5 | pro*)        style=proposal;;
-            *) execute "cd -"; break;;
-        esac
-        if [ -n "${style}" ]; then
-            info "bootstrapping with $style style"
-            template_dir="${relpath_makefiles}/latex/example-${style}"
-            if [ -d "${template_dir}" ]; then
-                execute "cp ${template_dir}/*.tex ."
-                execute "cp ${template_dir}/_style.sty ."
-                execute "cp ${template_dir}/images/*.pdf images/"
-                if [ "${style}" == "beamerthemeFalkor" ]; then
-                    relpath_beamertheme=${relpath_rootdir}/${SUBMODULE_DIR}/beamerthemeFalkor
-                    execute "ln -sf ${relpath_beamertheme}/beamerthemeFalkor.sty ."
-                    execute "cp ${template_dir}/images/*.jpg images/"
-                    execute "cp ${template_dir}/images/*.png images/"
+            echo -n "Your choice (0 | 1 | 2 | 3 | 4) ? "
+            read ans
+            case $ans in
+                1 | ie* | IE*)   style=IEEE;;
+                2 | ln* | LN*)   style=LNCS;;
+                3 | acm* | ACM*) style=ACM;;
+                4 | bea*)        style=beamerthemeFalkor;;
+                5 | pro*)        style=proposal;;
+                *) execute "cd -"; break;;
+            esac
+            if [ -n "${style}" ]; then
+                info "bootstrapping with $style style"
+                template_dir="${relpath_makefiles}/latex/example-${style}"
+                if [ -d "${template_dir}" ]; then
+                    execute "cp ${template_dir}/*.tex ."
+                    execute "cp ${template_dir}/_style.sty ."
+                    execute "cp ${template_dir}/images/*.pdf images/"
+                    if [ "${style}" == "beamerthemeFalkor" ]; then
+                        relpath_beamertheme=${relpath_rootdir}/${SUBMODULE_DIR}/beamerthemeFalkor
+                        execute "ln -sf ${relpath_beamertheme}/beamerthemeFalkor.sty ."
+                        execute "cp ${template_dir}/images/*.jpg images/"
+                        execute "cp ${template_dir}/images/*.png images/"
+                    else
+                        execute "cp ${template_dir}/*.cls ."
+                        execute "cp ${template_dir}/*.bib ."
+                    fi
                 else
-                    execute "cp ${template_dir}/*.cls ."
-                    execute "cp ${template_dir}/*.bib ."
+                    echo "the directory '${template_dir}' does not exist. You shall update the Git submodule ${relpath_makefiles}. You shall run: "
+                    echo -e "\t pushd ${relpath_makefiles} && git pull origin && popd"
+                    echo -e "\t git commit -s ${relpath_makefiles} -m 'update Git submodule Makefile to the latest version'"
                 fi
-            else 
-                echo "the directory '${template_dir}' does not exist. You shall update the Git submodule ${relpath_makefiles}. You shall run: "
-                echo -e "\t pushd ${relpath_makefiles} && git pull origin && popd"
-                echo -e "\t git commit -s ${relpath_makefiles} -m 'update Git submodule Makefile to the latest version'"
             fi
         fi
         already_git_add=`git ls-files .`
@@ -691,7 +762,8 @@ EOF
             execute "git commit -s -m 'bootstrap LaTeX directory ${subdir}' ${relpath_rootdir}/${subdir}"
         else
             echo "   ... ${subdir} already added to the git repo (?)"
-        fi        
+        fi
+
         execute "cd -"
     done
 fi
