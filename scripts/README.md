@@ -25,6 +25,7 @@ Assuming your `PATH` includes `~/bin`, simply make a symbolic link in this folde
     init_gitrepo [--debug] [-v] [-n]
     init_gitrepo [--debug] [-v] [-n] --article --name sc13
     init_gitrepo [--debug] [-v] [-n] --slides  --name sc13
+    init_gitrepo [--debug] [-v] [-n] --fnr
 
 ## DESCRIPTION
 
@@ -60,6 +61,8 @@ I like i.e.
         Bootstrap a beamer slides directory
     -b  --with-bookchapter  --with-chapter
         Bootstrap a boot chapter directory
+    --fnr 
+        Bootstrap a new FNR project
 
 
 ## EXAMPLES
@@ -75,6 +78,11 @@ Initiate a new article for the conference SC'13 (i.e. bootstrap a directory `art
 Initiate new Beamer slides for the conference SC'13 (i.e. bootstrap a directory `slides/2013/sc13`):
          
     init_gitrepo --slides --name sc13
+
+Initialize a new [FNR](http://fnr.lu) project -- [instructions](https://github.com/Falkor/fnr-latex-template#bootstrapping-your-own-fnr-proposal)
+
+	init_gitrepo --fnr 
+	
 
 
 ## AUTHOR
