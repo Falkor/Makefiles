@@ -2,7 +2,7 @@
 #################################################################################
 # init_gitrepo - Initialize my git repo with my favorite layout and configuration
 # Creation : 15 Nov 2013
-# Time-stamp: <Ven 2014-03-28 10:48 svarrette>
+# Time-stamp: <Ven 2014-05-16 16:28 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -660,10 +660,17 @@ if [ -n "${BOOTSTRAP_LATEX}" ]; then
         #echo "latex_dir = $latex_dir"
         #echo "startdir  = $STARTDIR"
         relpath_rootdir=`python -c "import os.path; print os.path.relpath('${STARTDIR}','${latex_dir}')"`
+        if [ ! -e ".root" ]; then 
+            execute "ln -s ${relpath_rootdir} .root"
+            execute "git add .root"
+            execute "git commit -s -m 'Add symlink to the root directory as .root' .root"
+        fi 
         #echo "relpath_rootdir = ${relpath_rootdir}"
 
+
         if [ -n "${BOOTSTRAP_FNR_PROPOSAL}" ]; then
-            relpath_template=${relpath_rootdir}/${FNR_TEMPLATE_DIR}
+            #relpath_template=${relpath_rootdir}/${FNR_TEMPLATE_DIR}
+            relpath_template=.root/${FNR_TEMPLATE_DIR}
             cat <<EOF
 You can now bootstrap and FNR Project proposal in '${subdir}' with the following options:
    0 : DO NOT bootstrap
@@ -700,9 +707,15 @@ EOF
             execute "rm -f Makefile VERSION _acronyms.tex biblio.bib"
             execute "touch biblio.bib"
         fi
+        if [ ! -e ".root" ]; then 
+            execute "ln -s ${relpath_rootdir} .root"
+            execute "git add .root"
+            execute "git commit -s -m 'Add symlink to the root directory as .root' .root"
+        fi 
 
-        relpath_makefiles=${relpath_rootdir}/${MAKEFILES_REF_DIR}
-        [ ! -f VERSION ]  && execute "ln -sf ${relpath_rootdir}/VERSION ."
+        #relpath_makefiles=${relpath_rootdir}/${MAKEFILES_REF_DIR}
+        relpath_makefiles=.root/${MAKEFILES_REF_DIR}
+        [ ! -f VERSION ]  && execute "ln -sf .root/VERSION ."
         [ ! -f Makefile ] && execute "ln -sf ${relpath_makefiles}/latex/Makefile ."
         [ ! -f '_acronyms.tex' ] && execute "cp ${relpath_makefiles}/latex/_acronyms.tex ."
         [ ! -f ".gitignore" ]    && execute "cp ${relpath_makefiles}/latex/.gitignore ." || true
@@ -714,7 +727,15 @@ EOF
             execute "mkdir images"
             execute "ln -sf ../${relpath_makefiles}/generic/Makefile.insubdir images/Makefile"
         fi
+        for f in VERSION Makefile _acronyms.tex .gitignore .Trash/.empty images/Makefile; do
+            if [ -e "$f" ]; then 
+                execute "git add $f"
+                execute "git commit -s -m 'initialize $f' $f"
+            fi 
+        done 
+
         if [ -z "${BOOTSTRAP_FNR_PROPOSAL}" ]; then
+            # Regular article
             cat <<EOF
 You can now bootstrap the LaTeX project in '${subdir}' with the following options:
    0 :           DO NOT bootstrap
@@ -741,8 +762,12 @@ EOF
                     execute "cp ${template_dir}/_style.sty ."
                     execute "cp ${template_dir}/images/*.pdf images/"
                     if [ "${style}" == "beamerthemeFalkor" ]; then
-                        relpath_beamertheme=${relpath_rootdir}/${SUBMODULE_DIR}/beamerthemeFalkor
+                        relpath_beamertheme=.root/${SUBMODULE_DIR}/beamerthemeFalkor
                         execute "ln -sf ${relpath_beamertheme}/beamerthemeFalkor.sty ."
+                        if [ -e "beamerthemeFalkor.sty" ]; then 
+                            execute "git add beamerthemeFalkor.sty"
+                            execute "git commit -s -m 'initialize Beamer style Falkor' beamerthemeFalkor.sty"
+                        fi 
                         execute "cp ${template_dir}/images/*.jpg images/"
                         execute "cp ${template_dir}/images/*.png images/"
                     else
