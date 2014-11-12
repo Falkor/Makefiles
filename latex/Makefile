@@ -88,7 +88,7 @@ LATEX        = $(shell which latex)
 else
 LATEX        = $(shell which pdflatex)
 endif
-CMDLINE_OPTS = -halt-on-error -interaction=batchmode
+CMDLINE_OPTS = -synctex=1 -halt-on-error -interaction=batchmode
 LATEX2HTML   = $(shell which latex2html)
 LATEX2RTF    = $(shell which latex2rtf)
 BIBTEX       = $(shell which bibtex)
