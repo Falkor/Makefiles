@@ -409,7 +409,7 @@ create_output_dir:
 
 # Clean option
 clean:
-	rm -f *.dvi $(RTF) $(TO_MOVE) $(BACKUP_FILES)
+	rm -f *.dvi $(RTF) $(TO_MOVE) $(BACKUP_FILES) *.synctex.gz
 	@if [ ! -z "$(OUTPUT_DIR)" -a -d $(OUTPUT_DIR) -a "$(OUTPUT_DIR)" != "." ]; then       \
 		for f in $(MAIN_TEX); do                                  \
 			base=`basename $$f .tex`;                            \
