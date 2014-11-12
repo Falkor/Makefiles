@@ -2,7 +2,7 @@
 #################################################################################
 # init_gitrepo - Initialize my git repo with my favorite layout and configuration
 # Creation : 15 Nov 2013
-# Time-stamp: <Ven 2014-05-16 16:28 svarrette>
+# Time-stamp: <Mer 2014-08-20 14:46 svarrette>
 #
 # Copyright (c) 2013 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #               http://varrette.gforge.uni.lu
@@ -117,6 +117,7 @@ NAME
 SYNOPSIS
     $COMMAND [-V | -h]
     $COMMAND [--debug] [-v] [-n]
+    $COMMAND [--debug] [-v] [-n] --rake
     $COMMAND [--debug] [-v] [-n] --article --name sc13
     $COMMAND [--debug] [-v] [-n] --slides  --name sc13
     $COMMAND [--debug] [-v] [-n] --fnr
@@ -262,10 +263,47 @@ really_continue() {
 
 ###
 # Compute relative path between two absolute directories
+## Courtesy of http://stackoverflow.com/questions/2564634/bash-convert-absolute-path-into-relative-path-given-a-current-directory
 ##
-relpath() {
+function get_relpath() {
     #echo "realpath($1)"
-    return `python -c \"import os.path; print os.path.relpath('$1','${2:-`pwd`}')\"`
+    #return `python -c \"import os.path; print os.path.relpath('$1','${2:-`pwd`}')\"`
+    source=$1
+    target=$2
+
+    common_part=$source # for now
+    result="" # for now
+
+    while [[ "${target#$common_part}" == "${target}" ]]; do
+        # no match, means that candidate common part is not correct
+        # go up one level (reduce common part)
+        common_part="$(dirname $common_part)"
+        # and record that we went back, with correct / handling
+        if [[ -z $result ]]; then
+            result=".."
+        else
+            result="../$result"
+        fi
+    done
+
+    if [[ $common_part == "/" ]]; then
+        # special case for root (no common path)
+        result="$result/"
+    fi
+
+    # since we now have identified the common part,
+    # compute the non-common part
+    forward_part="${target#$common_part}"
+
+    # and now stick all parts together
+    if [[ -n $result ]] && [[ -n $forward_part ]]; then
+        result="$result$forward_part"
+    elif [[ -n $forward_part ]]; then
+        # extra slash removal
+        result="${forward_part:1}"
+    fi
+
+    echo $result
 }
 
 git_submodule_add() {
@@ -659,15 +697,15 @@ if [ -n "${BOOTSTRAP_LATEX}" ]; then
         latex_dir=`pwd`
         #echo "latex_dir = $latex_dir"
         #echo "startdir  = $STARTDIR"
-        relpath_rootdir=`python -c "import os.path; print os.path.relpath('${STARTDIR}','${latex_dir}')"`
+        relpath_rootdir=`get_relpath "${latex_dir}" "${STARTDIR}"` 
+        #`python -c "import os.path; print os.path.relpath('${STARTDIR}','${latex_dir}')"`
         if [ ! -e ".root" ]; then 
             execute "ln -s ${relpath_rootdir} .root"
             execute "git add .root"
             execute "git commit -s -m 'Add symlink to the root directory as .root' .root"
         fi 
         #echo "relpath_rootdir = ${relpath_rootdir}"
-
-
+        
         if [ -n "${BOOTSTRAP_FNR_PROPOSAL}" ]; then
             #relpath_template=${relpath_rootdir}/${FNR_TEMPLATE_DIR}
             relpath_template=.root/${FNR_TEMPLATE_DIR}
@@ -700,7 +738,8 @@ EOF
             execute "git commit -s -m 'Bootstrap main Makefile for the full proposal generation'    Makefile"
             execute "cd src"
             latex_dir=`pwd`
-            relpath_rootdir=`python -c "import os.path; print os.path.relpath('${STARTDIR}','${latex_dir}')"`
+            relpath_rootdir=`get_relpath "${latex_dir}" "${STARTDIR}"` 
+            #`python -c "import os.path; print os.path.relpath('${STARTDIR}','${latex_dir}')"`
             if [ -d "project_description" ]; then
                 execute "ln -s ../images project_description/images"
             fi
