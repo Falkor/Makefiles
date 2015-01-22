@@ -1,11 +1,11 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mer 2014-03-26 17:18 svarrette>
-#     __  __       _         __ _ _       
-#    |  \/  | __ _| | _____ / _(_) | ___  
+# Time-stamp: <Jeu 2015-01-22 21:59 svarrette>
+#     __  __       _         __ _ _
+#    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
-#    | |  | | (_| |   <  __/  _| | |  __/ 
-#    |_|  |_|\__,_|_|\_\___|_| |_|_|\___| 
+#    | |  | | (_| |   <  __/  _| | |  __/
+#    |_|  |_|\__,_|_|\_\___|_| |_|_|\___|
 #
 # Copyright (c) 2012 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 # .             http://varrette.gforge.uni.lu
@@ -25,8 +25,8 @@ GITFLOW      = $(shell which git-flow)
 LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
 LAST_TAG = $(shell git describe --tags $(LAST_TAG_COMMIT) )
 TAG_PREFIX = "v"
-GITFLOW_BR_MASTER=production
-GITFLOW_BR_DEVELOP=devel
+GITFLOW_BR_MASTER=`git config --get gitflow.branch.master`
+GITFLOW_BR_DEVELOP=`git config --get gitflow.branch.develop`
 
 CURRENT_BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
 GIT_REMOTES    = $(shell git remote | xargs echo )
@@ -35,6 +35,9 @@ GIT_DIRTY      = $(shell git diff --shortstat 2> /dev/null | tail -n1 )
 # Format: '<url>[|<branch>]' - don't forget the quotes. if branch is ignored, 'master' is used
 #GIT_SUBTREE_REPOS = 'https://github.com/ULHPC/easybuild-framework.git|develop'  \
 					 'https://github.com/hpcugent/easybuild-wiki.git'
+GITSTATS     = ./.submodules/gitstats/gitstats
+GITSTATS_DIR = gitstats
+
 
 VERSION  = $(shell [ -f VERSION ] && head VERSION || echo "0.0.1")
 # OR try to guess directly from the last git tag
@@ -205,6 +208,13 @@ endif
 # Clean option
 clean:
 	@echo nothing to be cleaned for the moment
+
+
+# Perform various git statistics
+stats:
+	@if [ ! -d $(GITSTATS_DIR) ]; then mkdir -p $(GITSTATS_DIR); fi
+	$(GITSTATS) . $(GITSTATS_DIR)/
+
 
 
 # # force recompilation
