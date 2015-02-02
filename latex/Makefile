@@ -1,9 +1,9 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Ven 2013-11-29 13:59 svarrette>
+# Time-stamp: <Lun 2015-02-02 15:33 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
-#    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  / 
+#    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
 #    | |  | | (_| |   <  __/  _| | |  __/   / /    | |__| (_| || |  __//  \
 #    |_|  |_|\__,_|_|\_\___|_| |_|_|\___|  /_/     |_____\__,_||_|\___/_/\_\
 #
@@ -11,41 +11,41 @@
 # .             http://varrette.gforge.uni.lu
 #
 ####################################################################################
-# Compilation of files written in LaTeX. 
-# 
+# Compilation of files written in LaTeX.
+#
 # Grab the lastest version of this Makefile from:
 #            https://github.com/Falkor/Makefiles/tree/devel/latex
 #
 # --------------------------------------------------------------------------------
-# This is a generic makefile in the sense that it doesn't require to be 
+# This is a generic makefile in the sense that it doesn't require to be
 # modified when adding/removing new source files.
 # --------------------------------------------------------------------------------
 #
-# This makefile search for LaTeX sources from the current directory, identifies 
-# the main files (i.e the one containing the sequence '\begin{document}') and 
-# launch the compilation for the generation of PDFs and optionnaly compressed 
-# Postscript files. 
+# This makefile search for LaTeX sources from the current directory, identifies
+# the main files (i.e the one containing the sequence '\begin{document}') and
+# launch the compilation for the generation of PDFs and optionnaly compressed
+# Postscript files.
 # Two compilation modes can be configured using the USE_PDFLATEX variable:
-#    1/ Rely on pdflatex to generate directly a pdfs from the LaTeX sources. 
-#       The compilation follow then the scheme: 
+#    1/ Rely on pdflatex to generate directly a pdfs from the LaTeX sources.
+#       The compilation follow then the scheme:
 #
 #       main.tex --[pdflatex/bibtex]--> main.pdf + main.[aux|log etc.]
 #
 #       Note that in that case, your figures should be in pdf format instead of eps.
 #       To use this mode, just set the USE_PDFLATEX variable to 'yes'
-# 
+#
 #    2/ Respect the classical scheme:                             +-[dvips]-> main.ps
-#                                                                 |             |             
+#                                                                 |             |
 #                                                                 |        +-[gzip]
-#       main.tex -[latex/bibtex]-> main.dvi + main.[aux|log etc.]-+        |     
-#                                                                 |        +-> main.ps.gz     
+#       main.tex -[latex/bibtex]-> main.dvi + main.[aux|log etc.]-+        |
+#                                                                 |        +-> main.ps.gz
 #                                                                 +-[dvipdf]-> main.pdf
 #       To use this mode, just set the USE_PDFLATEX variable to 'no'
-# In all cases: 
+# In all cases:
 #   - all the intermediate files (main.aux, main.log etc.) will be moved
-#     to $(TRASH_DIR)/ (if it exists). 
+#     to $(TRASH_DIR)/ (if it exists).
 #   - the gererated files (optional dvi file, pdf, compressed Postscript files)
-#     will stay in the current directory.    
+#     will stay in the current directory.
 #
 # Available Commands : see `make help`
 
@@ -74,7 +74,7 @@ all:
 	@echo "No source files available - I can't handle the compilation"
 	@echo "Please check the presence of source files (with .tex extension)"
 else
-# Main tex file and figures it may depend on 
+# Main tex file and figures it may depend on
 MAIN_TEX   = $(shell grep -l "[\]begin{document}" $(TEX_SRC) | xargs echo)
 FIGURES    = $(shell find . -name "*.eps" -o -name "*.fig" | xargs echo)
 ifeq ($(MAIN_TEX),)
@@ -104,11 +104,11 @@ PS           = $(MAIN_TEX:%.tex=%.ps)
 PS_GZ        = $(MAIN_TEX:%.tex=%.ps.gz)
 PDF          = $(MAIN_TEX:%.tex=%.pdf)
 RTF          = $(MAIN_TEX:%.tex=%.rtf)
-TARGET_PDF   = $(PDF)   
-TARGET_PS_GZ = $(PS_GZ) 
+TARGET_PDF   = $(PDF)
+TARGET_PS_GZ = $(PS_GZ)
 ifneq ($(OUTPUT_DIR),.)
 TARGET_PDF   = $(PDF:%=$(OUTPUT_DIR)/%)
-TARGET_PS_GZ = $(PS_GZ:%=$(OUTPUT_DIR)/%) 
+TARGET_PS_GZ = $(PS_GZ:%=$(OUTPUT_DIR)/%)
 endif
 BACKUP_FILES = $(shell find . -name "*~")
 # Files to move to $(TRASH_DIR) after compilation
@@ -127,7 +127,7 @@ VERSION  = $(shell [ -f VERSION ] && head VERSION || echo "0.0.1")
 MAJOR      = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
 MINOR      = $(shell echo $(VERSION) | sed "s/[0-9]*\.\([0-9]*\).*/\1/")
 PATCH      = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
-# total number of commits 		
+# total number of commits
 BUILD      = $(shell git log --oneline | wc -l | sed -e "s/[ \t]*//g")
 
 #REVISION   = $(shell git rev-list $(LAST_TAG).. --count)
@@ -138,15 +138,23 @@ NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
 
 ### Main variables
 TARGETS      = $(TARGET_PDF)
-TARGETS_DEPS = $(TEX_SRC) $(STYLE_SRC) $(BIB_SRC) $(FIGURES) 
+TARGETS_DEPS = $(TEX_SRC) $(STYLE_SRC) $(BIB_SRC) $(FIGURES)
 
-.PHONY: all archive clean create_output_dir dvi force help html move_to_trash pdflatex ps release rtf setup singlerun start_bump_major start_bump_minor start_bump_patch test versioninfo 
+# Local configuration
+LOCAL_MAKEFILE = .Makefile.local
+
+.PHONY: all archive clean create_output_dir dvi force help html move_to_trash pdflatex ps release rtf setup singlerun start_bump_major start_bump_minor start_bump_patch test versioninfo
 
 ############################### Now starting rules ################################
-# Required rule : what's to be done each time 
+# Load local settings, if existing
+ifneq (,$(wildcard $(LOCAL_MAKEFILE)))
+include $(LOCAL_MAKEFILE)
+endif
+
+# Required rule : what's to be done each time
 all: $(TARGETS)
 
-# Test values of variables - for debug purposes  
+# Test values of variables - for debug purposes
 test:
 	@echo "USE_PDFLATEX: '$(USE_PDFLATEX)'"
 	@echo "--- Directories --- "
@@ -213,9 +221,9 @@ versioninfo:
 	@echo "next minor version: $(NEXT_MINOR_VERSION)"
 	@echo "next patch version: $(NEXT_PATCH_VERSION)"
 
-# Git flow management - this should be factorized 
+# Git flow management - this should be factorized
 ifeq ($(GITFLOW),)
-start_bump_patch start_bump_minor start_bump_major release: 
+start_bump_patch start_bump_minor start_bump_major release:
 	@echo "Unable to find git-flow on your system. "
 	@echo "See https://github.com/nvie/gitflow for installation details"
 else
@@ -273,7 +281,7 @@ endif
 
 ############################### LaTeX Compilation rules ################################
 
-### Single LaTeX compilation 
+### Single LaTeX compilation
 singlerun:
 	@for f in $(MAIN_TEX); do \
 		echo -e "==> Now running '$(LATEX) $(OPTIONAL_OPT) $(CMDLINE_OPTS) $$f'"; \
@@ -287,12 +295,12 @@ singlerun:
 	done
 
 ### Fast processing for a quick compilation
-fast: $(TARGETS_DEPS) 
+fast: $(TARGETS_DEPS)
 	@$(MAKE) singlerun OPTIONAL_OPT=-draftmode
 
 
 ### Bibliography aspects
-bib: 
+bib:
 	@for f in $(MAIN_TEX); do \
 		bib=`grep "^[\]bibliography{" $$f|sed -e "s/^[\]bibliography{\(.*\)}/\1/"|tr "," " "`;\
 		if [ ! -z "$$bib" ]; then \
@@ -313,7 +321,7 @@ $(DVI): $(TARGETS_DEPS)
 	@$(MAKE) singlerun
 	@$(MAKE) move_to_trash
 else
-$(DVI): 
+$(DVI):
 	@echo "Not relevant if USE_PDFLATEX = $(USE_PDFLATEX)"
 endif
 
@@ -338,7 +346,7 @@ $(TARGET_PS_GZ): $(DVI)
 else
 $(TARGET_PS_GZ): $(TARGET_PDF)
 	@for pdf in $?; do                                \
-		ps=`basename $$pdf .pdf`.ps;  
+		ps=`basename $$pdf .pdf`.ps;
 	   	echo "==> Now generating $$ps.gz from $$pdf"; \
 	  	$(PDF2PS) $$pdf $$ps;                     \
 	   	$(GZIP) -f $$ps;                          \
@@ -384,6 +392,7 @@ $(TARGET_PDF): $(TARGETS_DEPS)
 endif
 
 
+## Move to Trash
 TO_TRASH=$(shell ls $(TO_MOVE) 2>/dev/null | xargs echo)
 move_to_trash:
 	@if [ ! -z "${TO_TRASH}" -a -d $(TRASH_DIR) -a "$(TRASH_DIR)" != "." ]; then  \
@@ -395,13 +404,13 @@ move_to_trash:
                 echo "***     May be you should create it to hide the files ${TO_TRASH}";\
                 echo "***     Consider running 'mkdir -p $(TRASH_DIR)'"; \
 				echo "*****************************************************"; \
-        fi;   
+        fi;
 
-create_output_dir: 
+create_output_dir:
 	@if [ ! -d $(OUTPUT_DIR) ]; then                                                  \
 		echo "    /!\ $(OUTPUT_DIR)/ does not exist ==> Now creating ./$(OUTPUT_DIR)/"; \
 		mkdir -p ./$(OUTPUT_DIR);                                                 \
-	fi;  
+	fi;
 
 # plot:
 # 	$(MAKE) -C images/gnuplot plot
@@ -436,10 +445,35 @@ clean:
 	   rm  -rf $(HTML_DIR);                                      \
 	fi
 
-# # force recompilation
-# force :
-# 	@touch $(MAIN_TEX)
-# 	@$(MAKE)
+# force recompilation
+force :
+	@touch $(MAIN_TEX)
+	@$(MAKE)
+
+###### Exercise Correction 
+ifneq (,$(shell grep '\usepackage.*{exercice}' *.tex *.sty))
+TMP_FILE4CORRECTION = .putSolutions.tex
+correction: $(OUTPUT_PDF)
+	@echo "=> generating correction file"
+	@if [ ! -f "$(TMP_FILE4CORRECTION)" ]; then  \
+	     echo "\clearpage{\footnotesize \shipoutAnswer}" > $(TMP_FILE4CORRECTION); \
+	else echo "/!\ The file $(TMP_FILE4CORRECTION) already exists!"; \
+	fi
+	@for f in $(MAIN_TEX); do                             \
+	   correction_file=CORRECTION_$$f;                    \
+	   echo "correction file: $$correction_file";         \
+	   if [ -f "$$correction_file" ]; then                \
+		echo "/!\ correction file already present";       \
+	   else                                               \
+		ln -s $$f $$correction_file;                  \
+		$(MAKE);                                      \
+		rm -f $$correction_file $(TMP_FILE4CORRECTION) $(OUTPUT_DIR)/`basename $$f .tex`.pdf; \
+		$(MAKE);                                      \
+	   fi;                                                \
+	done
+	@[ -f $(TMP_FILE4CORRECTION) ] && rm $(TMP_FILE4CORRECTION)
+
+endif
 
 
 # print help message
@@ -492,9 +526,8 @@ else
 	$(LATEX2HTML) -show_section_numbers -local_icons -split +1 \
 		-dir $(HTML_DIR) $(MAIN_TEX)
 	@rm -f *.aux *.bbl $(HTML_DIR)/*.tex $(HTML_DIR)/*.aux $(HTML_DIR)/*.bbl
-	@echo "==> HTML files generated in $(HTML_DIR)/" 
+	@echo "==> HTML files generated in $(HTML_DIR)/"
 	@echo "May be you can try to execute 'mozilla ./$(HTML_DIR)/index.html'"
 endif
 endif
 endif  # End of ifeq ($(TEX_SRC),)
-
