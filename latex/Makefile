@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Lun 2015-02-02 15:33 svarrette>
+# Time-stamp: <Lun 2015-02-02 15:42 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -450,8 +450,8 @@ force :
 	@touch $(MAIN_TEX)
 	@$(MAKE)
 
-###### Exercise Correction 
-ifneq (,$(shell grep '\usepackage.*{exercice}' *.tex *.sty))
+###### Exercise Correction
+ifneq (, $(shell grep '\\usepackage.*{exercise}' *.tex *.sty))
 TMP_FILE4CORRECTION = .putSolutions.tex
 correction: $(OUTPUT_PDF)
 	@echo "=> generating correction file"
@@ -471,7 +471,7 @@ correction: $(OUTPUT_PDF)
 		$(MAKE);                                      \
 	   fi;                                                \
 	done
-	@[ -f $(TMP_FILE4CORRECTION) ] && rm $(TMP_FILE4CORRECTION)
+	@[ -f $(TMP_FILE4CORRECTION) ] && rm $(TMP_FILE4CORRECTION) || true
 
 endif
 
