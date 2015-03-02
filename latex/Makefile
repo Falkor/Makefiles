@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Lun 2015-03-02 23:23 svarrette>
+# Time-stamp: <Mon 2015-03-02 23:42 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -295,7 +295,7 @@ $(TARGET_PDF): $(TARGETS_DEPS)
 # Useful hask for generating Exercise Correction CORRECTION_<main>.tex
 ifneq (, $(shell grep '\\usepackage.*{exercise}' *.tex *.sty))
 TMP_FILE4CORRECTION = .putSolutions.tex
-correction $(addprefix CORRECTION_, $(TARGET_PDF)): $(TARGET_PDF)
+correction: $(TARGET_PDF)
 	@echo "=> generating correction file"
 	@if [ ! -f "$(TMP_FILE4CORRECTION)" ]; then  \
 	     echo "\clearpage{\footnotesize \shipoutAnswer}" > $(TMP_FILE4CORRECTION); \
