@@ -1,7 +1,7 @@
 %=============================================================================
 % File:  _style.sty --  LaTeX style configuration for the document 
 % Author(s): Sebastien Varrette <Sebastien.Varrette@uni.lu>
-% Time-stamp: <Lun 2013-12-02 22:33 svarrette>
+% Time-stamp: <Mer 2014-03-26 11:05 svarrette>
 %
 % Copyright (c) 2010 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 %               http://varrette.gforge.uni.lu
@@ -30,15 +30,15 @@
 %\usepackage{textcomp}
 \usepackage{multirow}
 \usepackage{rotating}
-%\usepackage[colorlinks=true]{hyperref}
+\usepackage[colorlinks=true]{hyperref}
 \usepackage{xspace}
 \usepackage{wasysym} % for smiley 
 
 %\usepackage{background}
-\usepackage[nolist]{acronym}          % for acronyms
+\usepackage[nolist]{acronym}  % for acronyms - options: [printonlyused,withpage]
 %\usepackage{dsfont}
 
-\usepackage[official]{eurosym} % Euro symbol
+\usepackage[official]{eurosym} % Euro symbol via \euro{}
 
 \usepackage{floatflt}
 %\usepackage[usenames]{color} % see http://en.wikibooks.org/wiki/LaTeX/Colors
@@ -84,8 +84,8 @@
 \usepackage{algorithm}
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Versionning with day and time
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Versionning with day and time using \isodayandtime
 %%%%%%%%%%%%%%
 % months
 \def\ftoday{\number\day\space
@@ -102,6 +102,14 @@
 \2{\count2}}
 \endgroup
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% Versionning from VERSION file via \docversion
+%%%%%%%%%%%%%%
+\IfFileExists{VERSION}{
+  \def\docversion{\input{VERSION}}
+}{
+  \def\docversion{0.1}
+}
 
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
