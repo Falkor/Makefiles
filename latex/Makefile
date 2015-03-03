@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mon 2015-03-02 23:42 svarrette>
+# Time-stamp: <Mar 2015-03-03 11:12 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -54,7 +54,7 @@ LIST_RELEASE_TO_DELETE = $(shell [ -f $(RELEASE_DIR) ] && ls $(RELEASE_DIR)/*.pd
 
 # Check availibility of source files
 TEX_SRC      = $(wildcard *.tex)
-MARKDOWN_SRC = $(wildcard *.md)
+MARKDOWN_SRC = $(filter-out README.md, $(wildcard *.md))
 MARKDOWN_DST = $(MARKDOWN_SRC:%.md=%.md.tex)
 STYLE_SRC    = $(wildcard *.sty)
 BIB_SRC      = $(wildcard *.bib)
