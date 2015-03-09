@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mar 2015-03-03 11:12 svarrette>
+# Time-stamp: <Lun 2015-03-09 23:23 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -63,7 +63,8 @@ $(error "No source files available - compilation is not possible -- Kindly check
 endif
 
 # Main tex file and figures it may depend on
-MAIN_TEX   = $(shell grep -l "[\]begin{document}" $(TEX_SRC) | xargs echo)
+MAIN_TEX    = $(shell grep -l "[\]begin{document}" $(TEX_SRC) | xargs echo)
+USE_BEAMER  = $(shell grep -l "{beamer}" $(MAIN_TEX) | xargs echo)
 #FIGURES    = $(shell find . -name "*.eps" -o -name "*.fig" | xargs echo)
 #IMAGES_DIR = images
 
@@ -165,6 +166,7 @@ test:
 	@echo "STYLE_SRC    -> '$(STYLE_SRC)'"
 	@echo "BIB_SRC      -> '$(BIB_SRC)'"
 	@echo "MAIN_TEX     -> '$(MAIN_TEX)'"
+	@echo "USE_BEAMER   -> '$(USE_BEAMER)'"
 	@echo "FIGURES      -> '$(FIGURES)'"
 	@echo "PDF          -> '$(PDF)'"
 	@echo "RTF          -> '$(RTF)'"
@@ -234,9 +236,15 @@ release: clean $(TARGET_PDF)
 ifneq ($(MARKDOWN_SRC),)
 md markdown: $(MARKDOWN_DST)
 
+ifeq ($(USE_BEAMER),)
 %.md.tex: %.md
 	@echo "==> generating LaTeX content from markdown file $<"
 	$(PANDOC) --from markdown --to latex -o $@ $<
+else
+%.md.tex: %.md
+	@echo "==> generating Beamer LaTeX content from markdown file $<"
+	$(PANDOC) --from markdown --to beamer --slide-level 3 -o $@ $<
+endif
 endif
 
 # Single LaTeX compilation
