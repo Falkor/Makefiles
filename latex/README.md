@@ -16,7 +16,7 @@ The Git branching model for this repository follows the guidelines of [gitflow](
 In particular, the central repository holds two main branches with an infinite lifetime: 
 
 * `production`: the branch holding tags of the successive releases of these slides
-* `devel`: the main branch where the sources are in a state with the latest delivered development changes for the next release. This is the *default* branch you get when you clone the repo, and teh one on which developments will take places. 
+* `devel`: the main branch where the sources are in a state with the latest delivered development changes for the next release. This is the *default* branch you get when you clone the repo, and the one on which developments will take places. 
 
 You should therefore install [git-flow](https://github.com/nvie/gitflow), and probably also its associated [bash completion](https://github.com/bobthecow/git-flow-completion).
 
