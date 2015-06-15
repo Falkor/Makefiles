@@ -1,7 +1,7 @@
 %=============================================================================
 % File:  _style.sty --  LaTeX style configuration for the document 
 % Author(s): Sebastien Varrette <Sebastien.Varrette@uni.lu>
-% Time-stamp: <Fri 2015-06-12 15:42 svarrette>
+% Time-stamp: <Mon 2015-06-15 10:09 svarrette>
 %
 % Copyright (c) 2010 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 %               http://varrette.gforge.uni.lu
@@ -106,10 +106,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 % Versionning from VERSION file via \docversion
 %%%%%%%%%%%%%%
-\IfFileExists{VERSION}{
-  \def\docversion{\input{VERSION}}
+\def\versionfile{VERSION}
+\IfFileExists{\versionfile}{
+  \providecommand{\docversion}{\input{\versionfile}}
 }{
-  \def\docversion{0.1}
+  \providecommand{\docversion}{0.1}
 }
 
 % correct bad hyphenation here
