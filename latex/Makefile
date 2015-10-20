@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Lun 2015-03-09 23:23 svarrette>
+# Time-stamp: <Tue 2015-10-20 14:28 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -50,7 +50,6 @@ TRASH_DIR   = .Trash
 HTML_DIR    = $(OUTPUT_DIR)/HTML
 SUPER_DIR   = $(shell basename `pwd`)
 RELEASE_DIR = releases
-LIST_RELEASE_TO_DELETE = $(shell [ -f $(RELEASE_DIR) ] && ls $(RELEASE_DIR)/*.pdf | grep -v $(VERSION) | xargs echo)
 
 # Check availibility of source files
 TEX_SRC      = $(wildcard *.tex)
@@ -92,21 +91,28 @@ TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg  *.maf *.mtc* *.out *.n
 LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
 LAST_TAG        = $(shell git describe --tags $(LAST_TAG_COMMIT) )
 ROOTDIR         = $(shell git rev-parse --show-toplevel)
+CURDIR          = $(shell git rev-parse --show-prefix)
 
 # Versioning
 VERSIONFILE   = VERSION
 VERSION       = $(shell [ -f $(VERSIONFILE) ] && head $(VERSIONFILE) || echo "0.0.1")
+PREVIOUS_VERSIONFILE_COMMIT = $(shell git log -1 --pretty=%h $(VERSIONFILE) 2>/dev/null )
+PREVIOUS_VERSION = $(shell [ -n "$(PREVIOUS_VERSIONFILE_COMMIT)" ] && git show $(PREVIOUS_VERSIONFILE_COMMIT)^:$(CURDIR)$(VERSIONFILE) )
 # OR try to guess directly from the last git tag
 #VERSION    = $(shell  git describe --tags $(LAST_TAG_COMMIT) | sed "s/^$(TAG_PREFIX)//")
 MAJOR         = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
 MINOR         = $(shell echo $(VERSION) | sed "s/[0-9]*\.\([0-9]*\).*/\1/")
-PATCH         = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
+PRE_PATCH     = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
+PATCH = $(PRE_PATCH:$(VERSION)=0)
 # total number of commits
 BUILD       = $(shell git log --oneline | wc -l | sed -e "s/[ \t]*//g")
 #REVISION   = $(shell git rev-list $(LAST_TAG).. --count)
 NEXT_MAJOR_VERSION = $(shell expr $(MAJOR) + 1).0.0-b$(BUILD)
 NEXT_MINOR_VERSION = $(MAJOR).$(shell expr $(MINOR) + 1).0-b$(BUILD)
 NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
+
+LIST_RELEASE_TO_DELETE = $(shell [ -d "$(RELEASE_DIR)" ] && ls $(RELEASE_DIR)/*.pdf | grep -v $(VERSION) | xargs echo)
+
 
 ### Main variables
 BEFORE_TARGETS =
@@ -201,6 +207,10 @@ versioninfo:
 	@echo "next major version: $(NEXT_MAJOR_VERSION)"
 	@echo "next minor version: $(NEXT_MINOR_VERSION)"
 	@echo "next patch version: $(NEXT_PATCH_VERSION)"
+	@echo "--------------"
+	@echo "Previous version file '$(VERSIONFILE)' commit: $(PREVIOUS_VERSIONFILE_COMMIT)"
+	@echo "Previous version **from** version file: '$(PREVIOUS_VERSION)'"
+
 
 version_bump_patch: clean
 	@echo "Patch release of the repository from $(VERSION) to $(NEXT_PATCH_VERSION)"
@@ -214,7 +224,7 @@ version_bump_major: clean
 	@echo "Major release of the repository from $(VERSION) to $(NEXT_MAJOR_VERSION)"
 	@echo $(NEXT_MAJOR_VERSION) > $(VERSIONFILE)
 
-release: clean $(TARGET_PDF)
+release: clean $(TARGET_PDF) correction
 	@if [ ! -d $(RELEASE_DIR) ]; then \
 		echo "    /!\ $(RELEASE_DIR)/ does not exist ==> Now creating ./$(RELEASE_DIR)/"; \
 		mkdir -p ./$(RELEASE_DIR); \
@@ -223,7 +233,9 @@ release: clean $(TARGET_PDF)
 		targetpdf=`basename $$pdf .pdf`-v$(VERSION).pdf ; \
 		base=`basename $$pdf .pdf`; \
 		cp $$pdf $(RELEASE_DIR)/$$targetpdf; \
+		[ -f "CORRECTION_$$pdf" ] && cp CORRECTION_$$pdf $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
 		git add -f $(RELEASE_DIR)/$$targetpdf; \
+		[ -f "CORRECTION_$$pdf" ] && git add -f $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
 		git commit -s -m "Add a copy of version $(VERSION) of $$pdf in $(RELEASE_DIR)/"; \
 	done
 	@if [ -n "$(LIST_RELEASE_TO_DELETE)" ]; then \
@@ -303,25 +315,29 @@ $(TARGET_PDF): $(TARGETS_DEPS)
 # Useful hask for generating Exercise Correction CORRECTION_<main>.tex
 ifneq (, $(shell grep '\\usepackage.*{exercise}' *.tex *.sty))
 TMP_FILE4CORRECTION = .putSolutions.tex
-correction: $(TARGET_PDF)
-	@echo "=> generating correction file"
+correction: clean 
 	@if [ ! -f "$(TMP_FILE4CORRECTION)" ]; then  \
-	     echo "\clearpage{\footnotesize \shipoutAnswer}" > $(TMP_FILE4CORRECTION); \
-	else echo "/!\ The file $(TMP_FILE4CORRECTION) already exists!"; \
+	   	echo "\clearpage{\footnotesize \shipoutAnswer}" > $(TMP_FILE4CORRECTION); \
+	else \
+		echo "/!\ The file $(TMP_FILE4CORRECTION) already exists!"; \
 	fi
 	@for f in $(MAIN_TEX); do                             \
-	   correction_file=CORRECTION_$$f;                    \
-	   echo "correction file: $$correction_file";         \
-	   if [ -f "$$correction_file" ]; then                \
-		echo "/!\ correction file already present";       \
-	   else                                               \
-		ln -s $$f $$correction_file;                  \
-		$(MAKE);                                      \
-		rm -f $$correction_file $(TMP_FILE4CORRECTION) $(OUTPUT_DIR)/`basename $$f .tex`.pdf; \
-		$(MAKE);                                      \
-	   fi;                                                \
+		correction_file=CORRECTION_$$f;                    \
+		echo "===> generating '$$f' and correction file '$$correction_file"; \
+	   	if [ -f "$$correction_file" ]; then                \
+			echo "/!\ correction file already present";       \
+	  	else                                               \
+			echo " * generating symlink $$correction_file and compile it"; \
+			ln -s $$f $$correction_file;               \
+			$(MAKE) `basename $$correction_file .tex`.pdf;  \
+			rm -f $$correction_file $(TMP_FILE4CORRECTION) `basename $$correction_file .tex`.synctex.gz $(OUTPUT_DIR)/`basename $$f .tex`.pdf; \
+			$(MAKE);  \
+	   	fi;           \
 	done
 	@[ -f $(TMP_FILE4CORRECTION) ] && rm $(TMP_FILE4CORRECTION) || true
+else
+
+correction:
 
 endif
 
@@ -341,7 +357,7 @@ move_to_trash:
 
 # Clean option
 clean:
-	rm -f $(TARGETS) $(RTF) $(TO_MOVE) $(BACKUP_FILES) *.synctex.gz*
+	rm -f $(TARGETS) $(RTF) $(TO_MOVE) $(BACKUP_FILES) *.synctex.gz* CORRECTION_*
 	@if [ ! -z "$(OUTPUT_DIR)" -a -d $(OUTPUT_DIR) -a "$(OUTPUT_DIR)" != "." ]; then       \
 		for f in $(MAIN_TEX); do                                  \
 			base=`basename $$f .tex`;                            \
