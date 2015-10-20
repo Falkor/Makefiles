@@ -1,0 +1,53 @@
+##################################################################################
+# Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
+# Time-stamp: <Wed 2015-04-15 23:36 svarrette>
+#
+# Copyright (c) 2015 Sebastien Varrette <Sebastien.Varrette@uni.lu>
+#
+# Available Commands
+# ------------------
+# make           : Compile markdown files to generate the html files
+# make force     : Force the complete re-compilation, even if not needed
+# make clean     : Remove backup files (*~) and other generated files
+#
+############################## Variables Declarations ############################
+
+SRC     = $(wildcard *.md)
+TARGET  = $(SRC:.md=.html)
+PANDOC  = $(shell which pandoc)
+ROOTDIR = $(shell git rev-parse --show-toplevel)
+CSS     = $(ROOTDIR)/.markdown.css
+
+# Local configuration
+LOCAL_MAKEFILE = .Makefile.local
+
+# Load local settings, if existing (to override variable eventually)
+ifneq (,$(wildcard $(LOCAL_MAKEFILE)))
+include $(LOCAL_MAKEFILE)
+endif
+
+all: doc
+
+ifeq ($(PANDOC),)
+doc:
+	@echo "Unable to find pandoc on your system. "
+	@echo "See http://pandoc.org/installing.html for installation details"
+else
+doc: $(TARGET)
+
+%.html: %.md $(CSS)
+	@echo "=> generating '$@' from '$<' using pandoc"
+	$(PANDOC) --from markdown --to html5 --toc --css $(CSS) --self-contained -o $@ $<
+endif
+
+test:
+	@echo "SRC     = $(SRC)"
+	@echo "TARGET   = $(TARGET)"
+
+force:
+	touch $(SRC)
+	@$(MAKE)
+
+clean:
+	@echo "=> remove target files and temporary emacs/vi files *~"
+	@rm -f $(TARGET) *~

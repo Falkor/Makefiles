@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Jeu 2015-01-22 22:26 svarrette>
+# Time-stamp: <Jeu 2015-04-02 10:28 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -21,7 +21,7 @@ UNAME = $(shell uname)
 SUPER_DIR   = $(shell basename `pwd`)
 
 # Git stuff management
-GITFLOW      = $(shell which git-flow)
+HAS_GITFLOW      = $(shell git flow version 2>/dev/null || [ $$? -eq 0 ])
 LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
 LAST_TAG = $(shell git describe --tags $(LAST_TAG_COMMIT) )
 TAG_PREFIX = "v"
@@ -40,7 +40,6 @@ GIT_DIRTY      = $(shell git diff --shortstat 2> /dev/null | tail -n1 )
 GITSTATS     = ./.submodules/gitstats/gitstats
 GITSTATS_DIR = gitstats
 
-
 VERSION  = $(shell [ -f VERSION ] && head VERSION || echo "0.0.1")
 # OR try to guess directly from the last git tag
 #VERSION    = $(shell  git describe --tags $(LAST_TAG_COMMIT) | sed "s/^$(TAG_PREFIX)//")
@@ -56,17 +55,28 @@ NEXT_MAJOR_VERSION = $(shell expr $(MAJOR) + 1).0.0-b$(BUILD)
 NEXT_MINOR_VERSION = $(MAJOR).$(shell expr $(MINOR) + 1).0-b$(BUILD)
 NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
 
+# Default targets
+TARGETS =
+
+# Local configuration
+LOCAL_MAKEFILE = .Makefile.local
+
 ### Main variables
 .PHONY: all archive clean fetch help release setup start_bump_major start_bump_minor start_bump_patch subtree_setup subtree_up subtree_diff test upgrade versioninfo 
 
 ############################### Now starting rules ################################
+# Load local settings, if existing (to override variable eventually)
+ifneq (,$(wildcard $(LOCAL_MAKEFILE)))
+include $(LOCAL_MAKEFILE)
+endif
+
 # Required rule : what's to be done each time 
-all: 
+all: $(TARGETS)
 
 # Test values of variables - for debug purposes  
 test:
 	@echo "--- Compilation commands --- "
-	@echo "GITFLOW      -> '$(GITFLOW)'"
+	@echo "HAS_GITFLOW      -> '$(HAS_GITFLOW)'"
 	@echo "--- Directories --- "
 	@echo "SUPER_DIR    -> '$(SUPER_DIR)'"
 	@echo "--- Git stuff ---"
@@ -111,7 +121,7 @@ versioninfo:
 	@echo "next patch version: $(NEXT_PATCH_VERSION)"
 
 ### Git flow management - this should be factorized 
-ifeq ($(GITFLOW),)
+ifeq ($(HAS_GITFLOW),)
 start_bump_patch start_bump_minor start_bump_major release: 
 	@echo "Unable to find git-flow on your system. "
 	@echo "See https://github.com/nvie/gitflow for installation details"

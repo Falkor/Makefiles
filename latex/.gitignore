@@ -31,5 +31,7 @@
 *.vrb
 *.xdy
 *.tdo
+*.md.tex
 /src_*
-
+.texinfo/*
+/*.pdf
