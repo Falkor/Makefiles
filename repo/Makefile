@@ -58,8 +58,12 @@ NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
 # Default targets
 TARGETS =
 
-# Local configuration
+# Local configuration - Kept for compatibity reason
 LOCAL_MAKEFILE = .Makefile.local
+
+# Makefile custom hooks
+MAKEFILE_BEFORE = .Makefile.before
+MAKEFILE_AFTER  = .Makefile.after
 
 ### Main variables
 .PHONY: all archive clean fetch help release setup start_bump_major start_bump_minor start_bump_patch subtree_setup subtree_up subtree_diff test upgrade versioninfo 
@@ -68,6 +72,9 @@ LOCAL_MAKEFILE = .Makefile.local
 # Load local settings, if existing (to override variable eventually)
 ifneq (,$(wildcard $(LOCAL_MAKEFILE)))
 include $(LOCAL_MAKEFILE)
+endif
+ifneq (,$(wildcard $(MAKEFILE_BEFORE)))
+include $(MAKEFILE_BEFORE)
 endif
 
 # Required rule : what's to be done each time 
@@ -227,8 +234,6 @@ stats:
 	@if [ ! -d $(GITSTATS_DIR) ]; then mkdir -p $(GITSTATS_DIR); fi
 	$(GITSTATS) . $(GITSTATS_DIR)/
 
-
-
 # # force recompilation
 # force :
 # 	@touch $(MAIN_TEX)
@@ -245,4 +250,8 @@ help :
 	@echo '|               git-flow at a given level (major, minor or patch bump) |'
 	@echo '| make release: Finalize the release using git-flow                    |'
 	@echo '+----------------------------------------------------------------------+'
+
+ifneq (,$(wildcard $(MAKEFILE_AFTER)))
+include $(MAKEFILE_AFTER)
+endif
 

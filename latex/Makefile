@@ -119,8 +119,12 @@ BEFORE_TARGETS =
 TARGETS        = $(BEFORE_TARGETS) $(TARGET_PDF)
 TARGETS_DEPS = $(TEX_SRC) $(MARKDOWN_SRC) $(STYLE_SRC) $(BIB_SRC) $(FIGURES)
 
-# Local configuration
+# Local configuration - Kept for compatibity reason
 LOCAL_MAKEFILE = .Makefile.local
+
+# Makefile custom hooks
+MAKEFILE_BEFORE = .Makefile.before
+MAKEFILE_AFTER  = .Makefile.after
 
 .PHONY: all archive test versioninfo
 
@@ -130,6 +134,9 @@ LOCAL_MAKEFILE = .Makefile.local
 # Load local settings, if existing (to override variable eventually)
 ifneq (,$(wildcard $(LOCAL_MAKEFILE)))
 include $(LOCAL_MAKEFILE)
+endif
+ifneq (,$(wildcard $(MAKEFILE_BEFORE)))
+include $(MAKEFILE_BEFORE)
 endif
 
 ifeq ($(MAIN_TEX),)
@@ -434,4 +441,8 @@ else
 	@rm -f *.aux *.bbl $(HTML_DIR)/*.tex $(HTML_DIR)/*.aux $(HTML_DIR)/*.bbl
 	@echo "==> HTML files generated in $(HTML_DIR)/"
 	@echo "May be you can try to execute 'mozilla ./$(HTML_DIR)/index.html'"
+endif
+
+ifneq (,$(wildcard $(MAKEFILE_AFTER)))
+include $(MAKEFILE_AFTER)
 endif
