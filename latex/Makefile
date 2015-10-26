@@ -286,7 +286,7 @@ fast: $(TARGETS_DEPS)
 ### Bibliography aspects
 bib:
 	@for f in $(MAIN_TEX); do \
-		bib=`grep "^[\]bibliography{" $$f|sed -e "s/^[\]bibliography{\(.*\)}/\1/"|tr "," " "`;\
+		bib=`grep "^\s*[\]bibliography{" $$f|sed -e "s/^[\]bibliography{\(.*\)}/\1/"|tr "," " "`;\
 		if [ ! -z "$$bib" ]; then \
 	  		echo "==> Now running BibTeX ($$bib used in $$f)";   \
 			$(BIBTEX) `basename $$f .tex`;                       \
