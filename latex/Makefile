@@ -250,7 +250,7 @@ release: clean $(TARGET_PDF) correction
 		else \
 				echo "==> blank copy of the (non-optimized) PDF from $(SRCDIR)"; \
 				cp $$pdf $(RELEASE_DIR)/$$targetpdf; \
-		fi
+		fi; \
    	[ -f "CORRECTION_$$pdf" ] && cp CORRECTION_$$pdf $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
 		git add -f $(RELEASE_DIR)/$$targetpdf; \
 		[ -f "CORRECTION_$$pdf" ] && git add -f $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
