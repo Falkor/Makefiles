@@ -113,6 +113,9 @@ NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
 
 LIST_RELEASE_TO_DELETE = $(shell [ -d "$(RELEASE_DIR)" ] && ls $(RELEASE_DIR)/*.pdf | grep -v $(VERSION) | xargs echo)
 
+# Ghostscript for the help of producing optimized PDF
+GS      = $(shell which gs)
+GS_OPTS = -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress
 
 ### Main variables
 BEFORE_TARGETS =
@@ -172,6 +175,8 @@ test:
 	@echo "LATEX2RTF    -> '$(LATEX2RTF)'"
 	@echo "PANDOC       -> '$(PANDOC)'"
 	@echo "BIBTEX       -> '$(BIBTEX)'"
+	@echo "GS           -> '$(GS)'"
+	@echo "GS_OPTS      -> '$(GS_OPTS)'"
 	@echo
 	@echo "--- Files --- "
 	@echo "TEX_SRC      -> '$(TEX_SRC)'"
@@ -239,8 +244,14 @@ release: clean $(TARGET_PDF) correction
 	@for pdf in $(TARGET_PDF); do \
 		targetpdf=`basename $$pdf .pdf`-v$(VERSION).pdf ; \
 		base=`basename $$pdf .pdf`; \
-		cp $$pdf $(RELEASE_DIR)/$$targetpdf; \
-		[ -f "CORRECTION_$$pdf" ] && cp CORRECTION_$$pdf $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
+		if [ -n "$(GS)" ]; then \
+				echo "==> producing optimized PDF for releasing (thanks Hya for the gs command!) from '`pwd`'"; \
+				$(GS) $(GS_OPTS) -sOutputFile=$(RELEASE_DIR)/$$targetpdf $$pdf; \
+		else \
+				echo "==> blank copy of the (non-optimized) PDF from $(SRCDIR)"; \
+				cp $$pdf $(RELEASE_DIR)/$$targetpdf; \
+		fi
+   	[ -f "CORRECTION_$$pdf" ] && cp CORRECTION_$$pdf $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
 		git add -f $(RELEASE_DIR)/$$targetpdf; \
 		[ -f "CORRECTION_$$pdf" ] && git add -f $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
 		git commit -s -m "Add a copy of version $(VERSION) of $$pdf in $(RELEASE_DIR)/"; \
@@ -248,7 +259,7 @@ release: clean $(TARGET_PDF) correction
 	@if [ -n "$(LIST_RELEASE_TO_DELETE)" ]; then \
 		git rm $(LIST_RELEASE_TO_DELETE); \
 		git commit -s -m "Delete previous release copy $(LIST_RELEASE_TO_DELETE)" $(LIST_RELEASE_TO_DELETE); \
-	 fi
+	fi
 
 ####################### LaTeX Compilation rules ########################
 # Markdown files processing
@@ -322,7 +333,7 @@ $(TARGET_PDF): $(TARGETS_DEPS)
 # Useful hask for generating Exercise Correction CORRECTION_<main>.tex
 ifneq (, $(shell grep '\\usepackage.*{exercise}' *.tex *.sty))
 TMP_FILE4CORRECTION = .putSolutions.tex
-correction: clean 
+correction: clean
 	@if [ ! -f "$(TMP_FILE4CORRECTION)" ]; then  \
 	   	echo "\clearpage{\footnotesize \shipoutAnswer}" > $(TMP_FILE4CORRECTION); \
 	else \
