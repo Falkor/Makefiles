@@ -19,7 +19,7 @@ OPTIPNG   = $(shell which optipng)
 GS        = $(shell which gs)
 # Their relatives options
 JPEGOPTIM_OPTS =
-OPTIPNG_OPTS   = -o7
+OPTIPNG_OPTS   = -o9 -zm1-9 -strip all
 GS_OPTS        = -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress
 
 # Sources
