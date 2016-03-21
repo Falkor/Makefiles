@@ -1,5 +1,5 @@
 %=============================================================================
-% File:  _style.sty --  LaTeX style configuration for the document 
+% File:  _style.sty --  LaTeX style configuration for the document
 % Author(s): Sebastien Varrette <Sebastien.Varrette@uni.lu>
 % Time-stamp: <Mon 2015-06-15 10:09 svarrette>
 %
@@ -33,7 +33,7 @@
 %\usepackage[colorlinks=true]{hyperref}
 \usepackage{hyperref}
 \usepackage{xspace}
-\usepackage{wasysym} % for smiley 
+\usepackage{wasysym} % for smiley
 
 %\usepackage{background}
 \usepackage[nolist]{acronym}  % for acronyms - options: [printonlyused,withpage]
@@ -103,7 +103,7 @@
 \2{\count2}}
 \endgroup
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Versionning from VERSION file via \docversion
 %%%%%%%%%%%%%%
 \def\versionfile{VERSION}
@@ -160,7 +160,9 @@
 \newcommand{\vssec} {\vspace{0em}}
 
 
-
+% pandoc converter compatibility -- see http://tex.stackexchange.com/questions/257418/error-tightlist-converting-md-file-into-pdf-using-pandoc
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
 
 
