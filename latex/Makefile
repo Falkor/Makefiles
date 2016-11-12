@@ -142,6 +142,10 @@ ifneq (,$(wildcard $(MAKEFILE_BEFORE)))
 include $(MAKEFILE_BEFORE)
 endif
 
+ifeq ($(LATEX),)
+$(error "Cannot find the LaTeX compiler '$(LATEX)' in your PATH")
+endif
+
 ifeq ($(MAIN_TEX),)
 $(error "Cannot find any .tex file with a '\begin{document}' directive among '$(TEX_SRC)'. Please define a main tex file!")
 endif
