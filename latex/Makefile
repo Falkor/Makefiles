@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Tue 2015-10-20 14:28 svarrette>
+# Time-stamp: <Fri 2016-11-18 21:07 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -53,7 +53,11 @@ RELEASE_DIR = releases
 
 # Check availibility of source files
 TEX_SRC      = $(wildcard *.tex)
+
 MARKDOWN_SRC = $(filter-out README.md, $(wildcard *.md))
+# Add to MARKDOWN_SRC the eventual markdown files added via \input{}
+MARKDOWN_SRC += $(shell grep '^\s*\\input{.*\.md}' *.tex | sed -e 's/.*\\input{//' -e 's/}//')
+
 MARKDOWN_DST = $(MARKDOWN_SRC:%.md=%.md.tex)
 STYLE_SRC    = $(wildcard *.sty)
 BIB_SRC      = $(wildcard *.bib)
@@ -163,7 +167,7 @@ endif
 all: $(TARGETS)
 
 # Test values of variables - for debug purposes
-test:
+info:
 	@echo "--- Directories --- "
 	@echo "OUTPUT_DIR   -> '$(OUTPUT_DIR)'"
 	@echo "TRASH_DIR    -> '$(TRASH_DIR)'"
@@ -255,7 +259,7 @@ release: clean $(TARGET_PDF) correction
 				echo "==> blank copy of the (non-optimized) PDF from $(SRCDIR)"; \
 				cp $$pdf $(RELEASE_DIR)/$$targetpdf; \
 		fi; \
-   	[ -f "CORRECTION_$$pdf" ] && cp CORRECTION_$$pdf $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
+		[ -f "CORRECTION_$$pdf" ] && cp CORRECTION_$$pdf $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
 		git add -f $(RELEASE_DIR)/$$targetpdf; \
 		[ -f "CORRECTION_$$pdf" ] && git add -f $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
 		git commit -s -m "Add a copy of version $(VERSION) of $$pdf in $(RELEASE_DIR)/"; \
