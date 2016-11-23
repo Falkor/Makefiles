@@ -56,7 +56,7 @@ TEX_SRC      = $(wildcard *.tex)
 
 MARKDOWN_SRC = $(filter-out README.md, $(wildcard *.md))
 # Add to MARKDOWN_SRC the eventual markdown files added via \input{}
-MARKDOWN_SRC += $(shell grep '^\s*\\input{.*\.md}' *.tex | sed -e 's/.*\\input{//' -e 's/}//')
+MARKDOWN_SRC += $(shell grep '^\s*\\input{.*\.md}' *.tex | sed -e 's/.*\\input{\(.*\)}.*/\1/' -e 's/}//')
 
 MARKDOWN_DST = $(MARKDOWN_SRC:%.md=%.md.tex)
 STYLE_SRC    = $(wildcard *.sty)
