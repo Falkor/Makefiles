@@ -81,7 +81,7 @@ endif
 all: $(TARGETS)
 
 # Test values of variables - for debug purposes
-test:
+info:
 	@echo "--- Compilation commands --- "
 	@echo "HAS_GITFLOW      -> '$(HAS_GITFLOW)'"
 	@echo "--- Directories --- "
