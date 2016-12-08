@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2016-11-18 21:07 svarrette>
+# Time-stamp: <Thu 2016-12-08 19:15 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -89,7 +89,7 @@ endif
 BACKUP_FILES = $(shell find . -name "*~")
 # Files to move to $(TRASH_DIR) after compilation
 # Never add *.tex (or any reference to source files) for this variable.
-TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg  *.maf *.mtc* *.out *.nav *snm *.vrb *.rel *.thm
+TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg  *.maf *.mtc* *.out *.nav *snm *.vrb *.rel *.thm *.bcf *-blx.bib *.run.xml
 
 # Git stuff
 LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
@@ -305,8 +305,8 @@ fast: $(TARGETS_DEPS)
 ### Bibliography aspects
 bib:
 	@for f in $(MAIN_TEX); do \
-		bib=`grep "^\s*[\]bibliography{" $$f|sed -e "s/^[\]bibliography{\(.*\)}/\1/"|tr "," " "`;\
-		if [ ! -z "$$bib" ]; then \
+		bib=`grep -e "^\s*[\][add]*bib.*{" tutorial-RR.tex | cut -d '{' -f 2 | tr '}' ' '`;\
+    		if [ ! -z "$$bib" ]; then \
 	  		echo "==> Now running BibTeX ($$bib used in $$f)";   \
 			$(BIBTEX) `basename $$f .tex`;                       \
 			echo -e "\n==> Now running second pdfLaTeX pass";    \
