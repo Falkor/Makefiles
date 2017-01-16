@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Jeu 2015-04-02 10:28 svarrette>
+# Time-stamp: <Mon 2017-01-16 13:38 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -31,6 +31,7 @@ GITFLOW_BR_MASTER=production
 GITFLOW_BR_DEVELOP=devel
 
 CURRENT_BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
+GIT_BRANCHES   = $(shell git for-each-ref --format='%(refname:short)' refs/heads/ | xargs echo)
 GIT_REMOTES    = $(shell git remote | xargs echo )
 GIT_DIRTY      = $(shell git diff --shortstat 2> /dev/null | tail -n1 )
 # Git subtrees repositories
@@ -48,7 +49,6 @@ MINOR      = $(shell echo $(VERSION) | sed "s/[0-9]*\.\([0-9]*\).*/\1/")
 PATCH      = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
 # total number of commits
 BUILD      = $(shell git log --oneline | wc -l | sed -e "s/[ \t]*//g")
-
 #REVISION   = $(shell git rev-list $(LAST_TAG).. --count)
 #ROOTDIR    = $(shell git rev-parse --show-toplevel)
 NEXT_MAJOR_VERSION = $(shell expr $(MAJOR) + 1).0.0-b$(BUILD)
@@ -91,6 +91,7 @@ info:
 	@echo "GITFLOW_BR_MASTER  -> '$(GITFLOW_BR_MASTER)'"
 	@echo "GITFLOW_BR_DEVELOP -> '$(GITFLOW_BR_DEVELOP)'"
 	@echo "CURRENT_BRANCH     -> '$(CURRENT_BRANCH)'"
+	@echo "GIT_BRANCHES       -> '$(GIT_BRANCHES)'"
 	@echo "GIT_REMOTES        -> '$(GIT_REMOTES)'"
 	@echo "GIT_DIRTY          -> '$(GIT_DIRTY)'"
 	@echo "GIT_SUBTREE_REPOS  -> '$(GIT_SUBTREE_REPOS)'"
@@ -255,4 +256,3 @@ help :
 ifneq (,$(wildcard $(MAKEFILE_AFTER)))
 include $(MAKEFILE_AFTER)
 endif
-

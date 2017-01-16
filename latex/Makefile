@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Thu 2016-12-08 19:15 svarrette>
+# Time-stamp: <Mon 2017-01-16 13:34 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -305,8 +305,8 @@ fast: $(TARGETS_DEPS)
 ### Bibliography aspects
 bib:
 	@for f in $(MAIN_TEX); do \
-		bib=`grep -e "^\s*[\][add]*bib.*{" tutorial-RR.tex | cut -d '{' -f 2 | tr '}' ' '`;\
-    		if [ ! -z "$$bib" ]; then \
+		bib=`grep -e "^\s*[\][add]*bib.*{" $$f | cut -d '{' -f 2 | tr '}' ' '`;\
+				if [ ! -z "$$bib" ]; then \
 	  		echo "==> Now running BibTeX ($$bib used in $$f)";   \
 			$(BIBTEX) `basename $$f .tex`;                       \
 			echo -e "\n==> Now running second pdfLaTeX pass";    \
