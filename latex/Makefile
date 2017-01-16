@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Tue 2015-10-20 14:28 svarrette>
+# Time-stamp: <Mon 2017-01-16 13:34 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -53,7 +53,11 @@ RELEASE_DIR = releases
 
 # Check availibility of source files
 TEX_SRC      = $(wildcard *.tex)
+
 MARKDOWN_SRC = $(filter-out README.md, $(wildcard *.md))
+# Add to MARKDOWN_SRC the eventual markdown files added via \input{}
+MARKDOWN_SRC += $(shell grep '^\s*\\input{.*\.md}' *.tex | sed -e 's/.*\\input{\(.*\)}.*/\1/' -e 's/}//')
+
 MARKDOWN_DST = $(MARKDOWN_SRC:%.md=%.md.tex)
 STYLE_SRC    = $(wildcard *.sty)
 BIB_SRC      = $(wildcard *.bib)
@@ -85,7 +89,7 @@ endif
 BACKUP_FILES = $(shell find . -name "*~")
 # Files to move to $(TRASH_DIR) after compilation
 # Never add *.tex (or any reference to source files) for this variable.
-TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg  *.maf *.mtc* *.out *.nav *snm *.vrb *.rel *.thm
+TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg  *.maf *.mtc* *.out *.nav *snm *.vrb *.rel *.thm *.bcf *-blx.bib *.run.xml
 
 # Git stuff
 LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
@@ -113,14 +117,21 @@ NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
 
 LIST_RELEASE_TO_DELETE = $(shell [ -d "$(RELEASE_DIR)" ] && ls $(RELEASE_DIR)/*.pdf | grep -v $(VERSION) | xargs echo)
 
+# Ghostscript for the help of producing optimized PDF
+GS      = $(shell which gs)
+GS_OPTS = -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress
 
 ### Main variables
 BEFORE_TARGETS =
 TARGETS        = $(BEFORE_TARGETS) $(TARGET_PDF)
 TARGETS_DEPS = $(TEX_SRC) $(MARKDOWN_SRC) $(STYLE_SRC) $(BIB_SRC) $(FIGURES)
 
-# Local configuration
+# Local configuration - Kept for compatibity reason
 LOCAL_MAKEFILE = .Makefile.local
+
+# Makefile custom hooks
+MAKEFILE_BEFORE = .Makefile.before
+MAKEFILE_AFTER  = .Makefile.after
 
 .PHONY: all archive test versioninfo
 
@@ -130,6 +141,13 @@ LOCAL_MAKEFILE = .Makefile.local
 # Load local settings, if existing (to override variable eventually)
 ifneq (,$(wildcard $(LOCAL_MAKEFILE)))
 include $(LOCAL_MAKEFILE)
+endif
+ifneq (,$(wildcard $(MAKEFILE_BEFORE)))
+include $(MAKEFILE_BEFORE)
+endif
+
+ifeq ($(LATEX),)
+$(error "Cannot find the LaTeX compiler '$(LATEX)' in your PATH")
 endif
 
 ifeq ($(MAIN_TEX),)
@@ -149,7 +167,7 @@ endif
 all: $(TARGETS)
 
 # Test values of variables - for debug purposes
-test:
+info:
 	@echo "--- Directories --- "
 	@echo "OUTPUT_DIR   -> '$(OUTPUT_DIR)'"
 	@echo "TRASH_DIR    -> '$(TRASH_DIR)'"
@@ -165,6 +183,8 @@ test:
 	@echo "LATEX2RTF    -> '$(LATEX2RTF)'"
 	@echo "PANDOC       -> '$(PANDOC)'"
 	@echo "BIBTEX       -> '$(BIBTEX)'"
+	@echo "GS           -> '$(GS)'"
+	@echo "GS_OPTS      -> '$(GS_OPTS)'"
 	@echo
 	@echo "--- Files --- "
 	@echo "TEX_SRC      -> '$(TEX_SRC)'"
@@ -232,7 +252,13 @@ release: clean $(TARGET_PDF) correction
 	@for pdf in $(TARGET_PDF); do \
 		targetpdf=`basename $$pdf .pdf`-v$(VERSION).pdf ; \
 		base=`basename $$pdf .pdf`; \
-		cp $$pdf $(RELEASE_DIR)/$$targetpdf; \
+		if [ -n "$(GS)" ]; then \
+				echo "==> producing optimized PDF for releasing (thanks Hya for the gs command!) from '`pwd`'"; \
+				$(GS) $(GS_OPTS) -sOutputFile=$(RELEASE_DIR)/$$targetpdf $$pdf; \
+		else \
+				echo "==> blank copy of the (non-optimized) PDF from $(SRCDIR)"; \
+				cp $$pdf $(RELEASE_DIR)/$$targetpdf; \
+		fi; \
 		[ -f "CORRECTION_$$pdf" ] && cp CORRECTION_$$pdf $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
 		git add -f $(RELEASE_DIR)/$$targetpdf; \
 		[ -f "CORRECTION_$$pdf" ] && git add -f $(RELEASE_DIR)/CORRECTION_$$targetpdf; \
@@ -241,7 +267,7 @@ release: clean $(TARGET_PDF) correction
 	@if [ -n "$(LIST_RELEASE_TO_DELETE)" ]; then \
 		git rm $(LIST_RELEASE_TO_DELETE); \
 		git commit -s -m "Delete previous release copy $(LIST_RELEASE_TO_DELETE)" $(LIST_RELEASE_TO_DELETE); \
-	 fi
+	fi
 
 ####################### LaTeX Compilation rules ########################
 # Markdown files processing
@@ -279,8 +305,8 @@ fast: $(TARGETS_DEPS)
 ### Bibliography aspects
 bib:
 	@for f in $(MAIN_TEX); do \
-		bib=`grep "^[\]bibliography{" $$f|sed -e "s/^[\]bibliography{\(.*\)}/\1/"|tr "," " "`;\
-		if [ ! -z "$$bib" ]; then \
+		bib=`grep -e "^\s*[\][add]*bib.*{" $$f | cut -d '{' -f 2 | tr '}' ' '`;\
+				if [ ! -z "$$bib" ]; then \
 	  		echo "==> Now running BibTeX ($$bib used in $$f)";   \
 			$(BIBTEX) `basename $$f .tex`;                       \
 			echo -e "\n==> Now running second pdfLaTeX pass";    \
@@ -315,7 +341,7 @@ $(TARGET_PDF): $(TARGETS_DEPS)
 # Useful hask for generating Exercise Correction CORRECTION_<main>.tex
 ifneq (, $(shell grep '\\usepackage.*{exercise}' *.tex *.sty))
 TMP_FILE4CORRECTION = .putSolutions.tex
-correction: clean 
+correction: clean
 	@if [ ! -f "$(TMP_FILE4CORRECTION)" ]; then  \
 	   	echo "\clearpage{\footnotesize \shipoutAnswer}" > $(TMP_FILE4CORRECTION); \
 	else \
@@ -434,4 +460,8 @@ else
 	@rm -f *.aux *.bbl $(HTML_DIR)/*.tex $(HTML_DIR)/*.aux $(HTML_DIR)/*.bbl
 	@echo "==> HTML files generated in $(HTML_DIR)/"
 	@echo "May be you can try to execute 'mozilla ./$(HTML_DIR)/index.html'"
+endif
+
+ifneq (,$(wildcard $(MAKEFILE_AFTER)))
+include $(MAKEFILE_AFTER)
 endif

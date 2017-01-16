@@ -1,5 +1,5 @@
 %=============================================================================
-% File:  _style.sty --  LaTeX style configuration for the document 
+% File:  _style.sty --  LaTeX style configuration for the document
 % Author(s): Sebastien Varrette <Sebastien.Varrette@uni.lu>
 % Time-stamp: <Mon 2015-06-15 10:09 svarrette>
 %
@@ -25,6 +25,17 @@
 
 \usepackage{tikz}
 
+% Useful package to place text wherever you want.
+% Usage: (where WIDTH, X and Y are relative numbers between 0 and 1)
+% \begin{textblock}{WIDTH}(X,Y)  % Ex (top right slide areai): \begin{textblock}{0.25}(0.7,0.2) ... \end{textblock}
+%  ...
+% \end{textblock}
+\usepackage[absolute,overlay]{textpos}
+% Set unit for textpos / textblock
+\setlength{\TPHorizModule}{\paperwidth}
+\setlength{\TPVertModule}{\paperheight}
+
+
 %\usepackage{type1cm}
 %\usepackage{eso-pic}
 %\usepackage{textcomp}
@@ -33,7 +44,7 @@
 %\usepackage[colorlinks=true]{hyperref}
 \usepackage{hyperref}
 \usepackage{xspace}
-\usepackage{wasysym} % for smiley 
+\usepackage{wasysym} % for smiley
 
 %\usepackage{background}
 \usepackage[nolist]{acronym}  % for acronyms - options: [printonlyused,withpage]
@@ -103,7 +114,7 @@
 \2{\count2}}
 \endgroup
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Versionning from VERSION file via \docversion
 %%%%%%%%%%%%%%
 \def\versionfile{VERSION}
@@ -160,7 +171,9 @@
 \newcommand{\vssec} {\vspace{0em}}
 
 
-
+% pandoc converter compatibility -- see http://tex.stackexchange.com/questions/257418/error-tightlist-converting-md-file-into-pdf-using-pandoc
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
 
 
