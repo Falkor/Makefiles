@@ -1,6 +1,6 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Sun 2017-03-19 18:51 svarrette>
+# Time-stamp: <Tue 2017-04-04 10:22 svarrette>
 #
 # Copyright (c) 2015 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #
@@ -31,10 +31,10 @@ $T:
 	done
 endef
 FETCH_TARGETS = __fetch __fetch-init
-__fetch_SRC = $(SRC_TO_FETCH)
+__fetch_SRC       = $(SRC_TO_FETCH)
 __fetch-init_SRC  = $(INIT_LIST)
 
-.PHONY: all info unlock lock init fetch
+.PHONY: all info unlock lock init fetch commit
 all: info
 
 info:
@@ -59,6 +59,10 @@ $(foreach T,$(FETCH_TARGETS),$(eval $(FETCH_template)))
 
 init: __fetch-init
 update fetch: __fetch
+commit:
+	@echo "==> commit changes made for the server '$(SERVER)'"
+	-git commit -q -s -m "[$(SERVER)] update system files " .
+
 
 # fetch:
 # 	@for f in $(SRC_TO_FETCH); do \
