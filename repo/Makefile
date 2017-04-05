@@ -178,7 +178,7 @@ update:
 
 upgrade: update
 	git submodule foreach 'git fetch origin; git checkout $$(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
-	@for submoddir in $(shell git submodule status | awk '{ print $$2 }' | xargs echo); do \
+	-@for submoddir in $(shell git submodule status | awk '{ print $$2 }' | xargs echo); do \
 		git commit -s -m "Upgrading Git submodule '$$submoddir' to the latest version" $$submoddir || true;\
 	done
 
