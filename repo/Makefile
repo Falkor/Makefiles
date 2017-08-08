@@ -66,7 +66,7 @@ MAKEFILE_BEFORE = .Makefile.before
 MAKEFILE_AFTER  = .Makefile.after
 
 ### Main variables
-.PHONY: all archive clean fetch help release setup start_bump_major start_bump_minor start_bump_patch subtree_setup subtree_up subtree_diff test upgrade versioninfo
+.PHONY: all archive clean fetch help release setup start_bump_major start_bump_minor start_bump_patch subtree_setup subtree_up subtree_diff test upgrade versioninfo doc
 
 ############################### Now starting rules ################################
 # Load local settings, if existing (to override variable eventually)
@@ -235,6 +235,11 @@ clean:
 stats:
 	@if [ ! -d $(GITSTATS_DIR) ]; then mkdir -p $(GITSTATS_DIR); fi
 	$(GITSTATS) . $(GITSTATS_DIR)/
+
+doc:
+	@if [ -n "`which mkdocs`" ]; then \
+		mkdocs serve; \
+	fi
 
 # # force recompilation
 # force :
