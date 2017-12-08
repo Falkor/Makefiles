@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mon 2017-01-16 13:34 svarrette>
+# Time-stamp: <Fri 2017-12-08 22:28 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -38,6 +38,17 @@
 
 ############################## Variables Declarations ##############################
 SHELL = /bin/bash
+
+
+NPROCS :=1
+OS		 := $(shell uname -s)
+ifeq($(OS),Linux)
+  NPROCS := $(shell grep -c ^processor /proc/cpuinfo)
+endif
+ifeq($(OS),Darwin) # Assume Mac OS X
+  NPROCS := $(shell system_profiler | awk '/Number Of CPUs/{print $4}{next;}')
+endif
+MAKEFLAGS= " -j ${NPROCS} "
 
 # set to 'yes' to use pdflatex for the direct generation of pdf from LaTeX sources
 # set to 'no' to use the classical scheme tex -> dvi -> [ps|pdf] by dvips
