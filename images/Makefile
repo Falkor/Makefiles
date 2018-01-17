@@ -77,10 +77,11 @@ all: $(TARGETS)
 #	@echo "By default, this makefile does nothing ;) run 'make optim' to optimize the images"
 
 optim:    $(TARGETS)
-fig:      $(SRC_FIG)
+fig:      $(FIG_PDF) $(FIG_PSPDFTEX)
 jpg jpeg: $(SRC_JPG)
 png:      $(SRC_PNG)
 pdf:      $(PDF)
+svg:      $(SVG_PDF)
 
 print:
 	@echo "JPEGOPTIM      = $(JPEGOPTIM)"
