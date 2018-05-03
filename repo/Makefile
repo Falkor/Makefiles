@@ -105,7 +105,7 @@ archive: clean
 ############################### Git Bootstrapping rules ################################
 setup:
 	-git fetch origin
-	git branch --track $(GITFLOW_BR_MASTER) origin/$(GITFLOW_BR_MASTER)
+	-git branch --track $(GITFLOW_BR_MASTER) origin/$(GITFLOW_BR_MASTER)
 	git config gitflow.branch.master     $(GITFLOW_BR_MASTER)
 	git config gitflow.branch.develop    $(GITFLOW_BR_DEVELOP)
 	git config gitflow.prefix.feature    feature/
