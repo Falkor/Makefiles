@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Tue 2018-11-06 11:24 svarrette>
+# Time-stamp: <Tue 2018-11-06 11:28 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -178,11 +178,12 @@ endif
 up update:
 	$(if $(GIT_DIRTY), $(error "Unable to pull latest commits: Dirty Git repository"))
 	@for br in $(GIT_BRANCHES_TO_UPDATE); do \
-		echo "=> Pulling and updating the local branch '$$br'"; \
+		echo -e "\n=> Pulling and updating the local branch '$$br'\n"; \
 		git checkout $$br; \
 		git pull origin $$br; \
 	done
 	git checkout $(CURRENT_BRANCH)
+	@echo "=> updating (NOT upgrading) git submodule"
 	git submodule init
 	git submodule update
 
