@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mon 2017-01-16 13:38 svarrette>
+# Time-stamp: <Tue 2018-11-06 11:22 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -40,6 +40,9 @@ GIT_DIRTY      = $(shell git diff --shortstat 2> /dev/null | tail -n1 )
 					 'https://github.com/hpcugent/easybuild-wiki.git'
 GITSTATS     = ./.submodules/gitstats/gitstats
 GITSTATS_DIR = gitstats
+
+# Branches to update on 'make up'
+GIT_BRANCHES_TO_UPDATE = $(GITFLOW_BR_DEVELOP) $(GITFLOW_BR_MASTER)
 
 VERSION  = $(shell [ -f VERSION ] && head VERSION || echo "0.0.1")
 # OR try to guess directly from the last git tag
@@ -87,14 +90,15 @@ info:
 	@echo "--- Directories --- "
 	@echo "SUPER_DIR    -> '$(SUPER_DIR)'"
 	@echo "--- Git stuff ---"
-	@echo "GITFLOW            -> '$(GITFLOW)'"
-	@echo "GITFLOW_BR_MASTER  -> '$(GITFLOW_BR_MASTER)'"
-	@echo "GITFLOW_BR_DEVELOP -> '$(GITFLOW_BR_DEVELOP)'"
-	@echo "CURRENT_BRANCH     -> '$(CURRENT_BRANCH)'"
-	@echo "GIT_BRANCHES       -> '$(GIT_BRANCHES)'"
-	@echo "GIT_REMOTES        -> '$(GIT_REMOTES)'"
-	@echo "GIT_DIRTY          -> '$(GIT_DIRTY)'"
-	@echo "GIT_SUBTREE_REPOS  -> '$(GIT_SUBTREE_REPOS)'"
+	@echo "GITFLOW                -> '$(GITFLOW)'"
+	@echo "GITFLOW_BR_MASTER      -> '$(GITFLOW_BR_MASTER)'"
+	@echo "GITFLOW_BR_DEVELOP     -> '$(GITFLOW_BR_DEVELOP)'"
+	@echo "CURRENT_BRANCH         -> '$(CURRENT_BRANCH)'"
+	@echo "GIT_BRANCHES           -> '$(GIT_BRANCHES)'"
+	@echo "GIT_REMOTES            -> '$(GIT_REMOTES)'"
+	@echo "GIT_DIRTY              -> '$(GIT_DIRTY)'"
+	@echo "GIT_SUBTREE_REPOS      -> '$(GIT_SUBTREE_REPOS)'"
+	@echo "GIT_BRANCHES_TO_UPDATE -> $(GIT_BRANCHES_TO_UPDATE)"
 	@echo ""
 	@echo "Consider running 'make versioninfo' to get info on git versionning variables"
 
@@ -170,12 +174,18 @@ release: clean
 	git push origin --tags
 endif
 
-### Git submodule management: pull and upgrade to the latest version
-update:
-	git pull origin
+### Git (submodule|branch)  management: pull and upgrade to the latest version
+up update:
+	$(if $(GIT_DIRTY), $(error "Unable to pull latest commits: Dirty Git repository"))
+	@for br in $(GIT_BRANCHES_TO_UPDATE); do \
+		git checkout $$br; \
+		git pull origin $$br; \
+	done
+	git checkout $(CURRENT_BRANCH)
 	git submodule init
 	git submodule update
 
+### Git submodule upgrade
 upgrade: update
 	git submodule foreach 'git fetch origin; git checkout $$(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
 	-@for submoddir in $(shell git submodule status | awk '{ print $$2 }' | xargs echo); do \
