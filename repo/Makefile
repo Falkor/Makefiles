@@ -262,6 +262,10 @@ endif
 
 # Clean option
 clean:
+	@if [ -d "$(GITSTATS_DIR)" ]; then \
+		echo "==> removing '$(GITSTATS_DIR)' directory"; \
+		rm -rf $(GITSTATS_DIR); \
+	fi
 	@echo nothing to be cleaned for the moment
 
 
