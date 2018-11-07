@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Tue 2018-11-06 11:28 svarrette>
+# Time-stamp: <Wed 2018-11-07 16:54 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -30,10 +30,16 @@ TAG_PREFIX = "v"
 GITFLOW_BR_MASTER=production
 GITFLOW_BR_DEVELOP=devel
 
-CURRENT_BRANCH = $(shell git rev-parse --abbrev-ref HEAD)
-GIT_BRANCHES   = $(shell git for-each-ref --format='%(refname:short)' refs/heads/ | xargs echo)
-GIT_REMOTES    = $(shell git remote | xargs echo )
-GIT_DIRTY      = $(shell git diff --shortstat 2> /dev/null | tail -n1 )
+CURRENT_BRANCH          = $(shell git rev-parse --abbrev-ref HEAD)
+GIT_BRANCHES            = $(shell git for-each-ref --format='%(refname:short)' refs/heads/ | xargs echo)
+GIT_REMOTES             = $(shell git remote | xargs echo )
+GIT_ROOTDIR             = $(shell git rev-parse --show-toplevel)
+GIT_HOOKSDIR            = .git/hooks
+SRC_HOOKSDIR            = config/hooks
+SRC_HOOKSDIR_TO_ROOTDIR = $(shell git -C "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" rev-parse --show-cdup)
+SRC_PRECOMMIT_HOOK      = $(wildcard $(SRC_HOOKSDIR)/pre-commit*)
+
+GIT_DIRTY    = $(shell git diff --shortstat 2> /dev/null | tail -n1 )
 # Git subtrees repositories
 # Format: '<url>[|<branch>]' - don't forget the quotes. if branch is ignored, 'master' is used
 #GIT_SUBTREE_REPOS = 'https://github.com/ULHPC/easybuild-framework.git|develop'  \
@@ -53,7 +59,6 @@ PATCH      = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
 # total number of commits
 BUILD      = $(shell git log --oneline | wc -l | sed -e "s/[ \t]*//g")
 #REVISION   = $(shell git rev-list $(LAST_TAG).. --count)
-#ROOTDIR    = $(shell git rev-parse --show-toplevel)
 NEXT_MAJOR_VERSION = $(shell expr $(MAJOR) + 1).0.0-b$(BUILD)
 NEXT_MINOR_VERSION = $(MAJOR).$(shell expr $(MINOR) + 1).0-b$(BUILD)
 NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
@@ -69,7 +74,7 @@ MAKEFILE_BEFORE = .Makefile.before
 MAKEFILE_AFTER  = .Makefile.after
 
 ### Main variables
-.PHONY: all archive clean fetch help release setup start_bump_major start_bump_minor start_bump_patch subtree_setup subtree_up subtree_diff test upgrade versioninfo doc
+.PHONY: all archive clean fetch help release setup setup_git_hooks start_bump_major start_bump_minor start_bump_patch subtree_setup subtree_up subtree_diff test upgrade versioninfo doc
 
 ############################### Now starting rules ################################
 # Load local settings, if existing (to override variable eventually)
@@ -90,6 +95,7 @@ info:
 	@echo "--- Directories --- "
 	@echo "SUPER_DIR    -> '$(SUPER_DIR)'"
 	@echo "--- Git stuff ---"
+	@echo "GIT_ROOTDIR            -> '$(GIT_ROOTDIR)'"
 	@echo "GITFLOW                -> '$(GITFLOW)'"
 	@echo "GITFLOW_BR_MASTER      -> '$(GITFLOW_BR_MASTER)'"
 	@echo "GITFLOW_BR_DEVELOP     -> '$(GITFLOW_BR_DEVELOP)'"
@@ -98,7 +104,11 @@ info:
 	@echo "GIT_REMOTES            -> '$(GIT_REMOTES)'"
 	@echo "GIT_DIRTY              -> '$(GIT_DIRTY)'"
 	@echo "GIT_SUBTREE_REPOS      -> '$(GIT_SUBTREE_REPOS)'"
-	@echo "GIT_BRANCHES_TO_UPDATE -> $(GIT_BRANCHES_TO_UPDATE)"
+	@echo "GIT_BRANCHES_TO_UPDATE -> '$(GIT_BRANCHES_TO_UPDATE)'"
+	@echo "GIT_HOOKSDIR           -> '$(GIT_HOOKSDIR)'"
+	@echo "SRC_HOOKSDIR           -> '$(SRC_HOOKSDIR)'"
+	@echo "SRC_HOOKSDIR_TO_ROOTDIR-> '$(SRC_HOOKSDIR_TO_ROOTDIR)'"
+	@echo "SRC_PRECOMMIT_HOOK     -> '$(SRC_PRECOMMIT_HOOK)'"
 	@echo ""
 	@echo "Consider running 'make versioninfo' to get info on git versionning variables"
 
@@ -117,8 +127,20 @@ setup:
 	git config gitflow.prefix.hotfix     hotfix/
 	git config gitflow.prefix.support    support/
 	git config gitflow.prefix.versiontag $(TAG_PREFIX)
-	$(MAKE) update
+	-$(MAKE) update
 	$(if $(GIT_SUBTREE_REPOS), $(MAKE) subtree_setup)
+	@if [ -d "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" ]; then \
+		echo "=> setup local git hooks"; \
+		$(MAKE) setup_git_hooks; \
+	fi
+
+setup_git_hooks:
+	@if [ -n "$(SRC_PRECOMMIT_HOOK)" ]; then \
+		if [ -f "$(GIT_ROOTDIR)/$(SRC_PRECOMMIT_HOOK)" ] && [ ! -f "$(GIT_ROOTDIR)/$(GIT_HOOKSDIR)/pre-commit" ]; then \
+			echo "=> setup Git pre-commit hook"; \
+			ln -s $(SRC_HOOKSDIR_TO_ROOTDIR)$(SRC_PRECOMMIT_HOOK) $(GIT_ROOTDIR)/$(GIT_HOOKSDIR)/pre-commit; \
+		fi ; \
+	fi
 
 fetch:
 	git fetch --all -v
