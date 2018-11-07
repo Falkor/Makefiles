@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Wed 2016-03-02 10:54 svarrette>
+# Time-stamp: <Mon 2017-03-27 11:33 svarrette>
 #
 # Copyright (c) 2016 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #
@@ -24,6 +24,7 @@ DIRS    = $(sort $(dir $(wildcard */)))
 SRCDIR  = src
 SRC     = $(wildcard $(SRCDIR)/[^_]*.tex)
 PDF     = $(SRC:.tex=.pdf)
+RELEASED_PDF = $(notdir $(PDF))
 # Ghostscript for the help of producing optimized PDF
 GS      = $(shell which gs)
 GS_OPTS = -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress
@@ -36,18 +37,22 @@ print:
 	@echo "SRCDIR  = $(SRCDIR)"
 	@echo "SRC     = $(SRC)"
 	@echo "PDF     = $(PDF)"
+	@echo "RELEASED_PDF = $(RELEASED_PDF)"
 	@echo "GS      = $(GS)"
 	@echo "GS_OPTS = $(GS_OPTS)"
 
 # Add a specific 'release' target only if in the appropriate directory, such that
 # otherwise, it is just passed to the subdirectory using the generic '%' target
 ifneq ($(SRC),)
+.PHONY: release
 release: clean
 	@echo "==> release a new PDF version of the LaTeX document '$(PDF)' from '`pwd`'"
 	$(MAKE) -C $(SRCDIR)
 	if [ -n "$(GS)" ]; then \
-		echo "==> producing optimized PDF for releasing from '`pwd`'"; \
-		$(GS) $(GS_OPTS) -sOutputFile=$(shell basename $(PDF)) $(PDF); \
+		for f in $(RELEASED_PDF); do \
+			echo "==> producing optimized PDF '$$f' for releasing from '`pwd`'"; \
+			$(GS) $(GS_OPTS) -sOutputFile=$$f $(SRCDIR)/$$f; \
+    done \
 	else \
 		echo "==> blank copy of the (non-optimized) PDF from $(SRCDIR)"; \
 		cp $(PDF) .; \

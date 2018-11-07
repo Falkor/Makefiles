@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mon 2017-01-16 13:34 svarrette>
+# Time-stamp: <Sat 2017-12-09 00:00 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -89,7 +89,7 @@ endif
 BACKUP_FILES = $(shell find . -name "*~")
 # Files to move to $(TRASH_DIR) after compilation
 # Never add *.tex (or any reference to source files) for this variable.
-TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg  *.maf *.mtc* *.out *.nav *snm *.vrb *.rel *.thm *.bcf *-blx.bib *.run.xml
+TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg  *.maf *.mtc* *.out *.nav *snm *.vrb *.rel *.thm *.bcf *-blx.bib *.run.xml *.idx
 
 # Git stuff
 LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
