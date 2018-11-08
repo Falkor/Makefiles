@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Wed 2018-11-07 16:54 svarrette>
+# Time-stamp: <Thu 2018-11-08 10:52 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -36,7 +36,7 @@ GIT_REMOTES             = $(shell git remote | xargs echo )
 GIT_ROOTDIR             = $(shell git rev-parse --show-toplevel)
 GIT_HOOKSDIR            = .git/hooks
 SRC_HOOKSDIR            = config/hooks
-SRC_HOOKSDIR_TO_ROOTDIR = $(shell git -C "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" rev-parse --show-cdup)
+#SRC_HOOKSDIR_TO_ROOTDIR = $(shell git -C "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" rev-parse --show-cdup)
 SRC_PRECOMMIT_HOOK      = $(wildcard $(SRC_HOOKSDIR)/pre-commit*)
 
 GIT_DIRTY    = $(shell git diff --shortstat 2> /dev/null | tail -n1 )
@@ -138,7 +138,7 @@ setup_git_hooks:
 	@if [ -n "$(SRC_PRECOMMIT_HOOK)" ]; then \
 		if [ -f "$(GIT_ROOTDIR)/$(SRC_PRECOMMIT_HOOK)" ] && [ ! -f "$(GIT_ROOTDIR)/$(GIT_HOOKSDIR)/pre-commit" ]; then \
 			echo "=> setup Git pre-commit hook"; \
-			ln -s $(SRC_HOOKSDIR_TO_ROOTDIR)$(SRC_PRECOMMIT_HOOK) $(GIT_ROOTDIR)/$(GIT_HOOKSDIR)/pre-commit; \
+			ln -s ../../$(SRC_PRECOMMIT_HOOK) $(GIT_ROOTDIR)/$(GIT_HOOKSDIR)/pre-commit; \
 		fi ; \
 	fi
 
