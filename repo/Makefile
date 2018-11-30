@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Wed 2018-11-07 16:54 svarrette>
+# Time-stamp: <Fri 2018-11-30 00:30 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -36,8 +36,8 @@ GIT_REMOTES             = $(shell git remote | xargs echo )
 GIT_ROOTDIR             = $(shell git rev-parse --show-toplevel)
 GIT_HOOKSDIR            = .git/hooks
 SRC_HOOKSDIR            = config/hooks
-SRC_HOOKSDIR_TO_ROOTDIR = $(shell git -C "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" rev-parse --show-cdup)
-SRC_PRECOMMIT_HOOK      = $(wildcard $(SRC_HOOKSDIR)/pre-commit*)
+#SRC_HOOKSDIR_TO_ROOTDIR = $(shell git -C "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" rev-parse --show-cdup)
+SRC_PRECOMMIT_HOOK      = $(wildcard $(SRC_HOOKSDIR)/pre-commit*.sh)
 
 GIT_DIRTY    = $(shell git diff --shortstat 2> /dev/null | tail -n1 )
 # Git subtrees repositories
@@ -50,7 +50,12 @@ GITSTATS_DIR = gitstats
 # Branches to update on 'make up'
 GIT_BRANCHES_TO_UPDATE = $(GITFLOW_BR_DEVELOP) $(GITFLOW_BR_MASTER)
 
-VERSION  = $(shell [ -f VERSION ] && head VERSION || echo "0.0.1")
+ifeq (,$(wildcard .bumpversion.cfg))
+VERSION  = $(shell [ -f VERSION ] && head VERSION || echo '0.0.1')
+else
+VERSION = $(shell bumpversion --dry-run --allow-dirty --list minor | grep current_version | cut -d '=' -f 2)
+endif
+
 # OR try to guess directly from the last git tag
 #VERSION    = $(shell  git describe --tags $(LAST_TAG_COMMIT) | sed "s/^$(TAG_PREFIX)//")
 MAJOR      = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
@@ -59,10 +64,15 @@ PATCH      = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
 # total number of commits
 BUILD      = $(shell git log --oneline | wc -l | sed -e "s/[ \t]*//g")
 #REVISION   = $(shell git rev-list $(LAST_TAG).. --count)
+ifeq (,$(wildcard ./\.bumpversion.cfg))
 NEXT_MAJOR_VERSION = $(shell expr $(MAJOR) + 1).0.0-b$(BUILD)
 NEXT_MINOR_VERSION = $(MAJOR).$(shell expr $(MINOR) + 1).0-b$(BUILD)
 NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
-
+else 
+NEXT_MAJOR_VERSION = $(shell expr $(MAJOR) + 1).0.0
+NEXT_MINOR_VERSION = $(MAJOR).$(shell expr $(MINOR) + 1).0
+NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)
+endif
 # Default targets
 TARGETS =
 
@@ -138,7 +148,7 @@ setup_git_hooks:
 	@if [ -n "$(SRC_PRECOMMIT_HOOK)" ]; then \
 		if [ -f "$(GIT_ROOTDIR)/$(SRC_PRECOMMIT_HOOK)" ] && [ ! -f "$(GIT_ROOTDIR)/$(GIT_HOOKSDIR)/pre-commit" ]; then \
 			echo "=> setup Git pre-commit hook"; \
-			ln -s $(SRC_HOOKSDIR_TO_ROOTDIR)$(SRC_PRECOMMIT_HOOK) $(GIT_ROOTDIR)/$(GIT_HOOKSDIR)/pre-commit; \
+			ln -s ../../$(SRC_PRECOMMIT_HOOK) $(GIT_ROOTDIR)/$(GIT_HOOKSDIR)/pre-commit; \
 		fi ; \
 	fi
 
@@ -160,35 +170,35 @@ start_bump_patch start_bump_minor start_bump_major release:
 	@echo "Unable to find git-flow on your system. "
 	@echo "See https://github.com/nvie/gitflow for installation details"
 else
-start_bump_patch: clean
-	@echo "Start the patch release of the repository from $(VERSION) to $(NEXT_PATCH_VERSION)"
-	git pull origin
-	git flow release start $(NEXT_PATCH_VERSION)
-	@echo $(NEXT_PATCH_VERSION) > VERSION
-	git commit -s -m "Patch bump to version $(NEXT_PATCH_VERSION)" VERSION
-	@echo "=> remember to update the version number in $(MAIN_TEX)"
-	@echo "=> run 'make release' once you finished the bump"
 
-start_bump_minor: clean
-	@echo "Start the minor release of the repository from $(VERSION) to $(NEXT_MINOR_VERSION)"
+define __VERSION_BUMP
+start_bump_$1:
+	$$(if $$(GIT_DIRTY), $$(error "Unable to bump version: Dirty Git repository"))
+	@echo "Start the '$1' release of the repository from $$(VERSION) to $2"
 	git pull origin
-	git flow release start $(NEXT_MINOR_VERSION)
-	@echo $(NEXT_MINOR_VERSION) > VERSION
-	git commit -s -m "Minor bump to version $(NEXT_MINOR_VERSION)" VERSION
-	@echo "=> remember to update the version number in $(MAIN_TEX)"
+	git flow release start $2
+	@sleep 1
+	@if [ -f VERSION ]; then \
+		echo $2 > VERSION; \
+		git commit -s -m "$1 bump to version $2" VERSION; \
+	fi
+	@if [ -f .bumpversion.cfg ]; then \
+		echo "=> using 'bumpversion [...] $1'"; \
+		bumpversion --commit --no-tag $1; \
+	fi
 	@echo "=> run 'make release' once you finished the bump"
+endef
 
-start_bump_major: clean
-	@echo "Start the major release of the repository from $(VERSION) to $(NEXT_MAJOR_VERSION)"
-	git pull origin
-	git flow release start $(NEXT_MAJOR_VERSION)
-	@echo $(NEXT_MAJOR_VERSION) > VERSION
-	git commit -s -m "Major bump to version $(NEXT_MAJOR_VERSION)" VERSION
-	@echo "=> remember to update the version number in $(MAIN_TEX)"
-	@echo "=> run 'make release' once you finished the bump"
+$(eval $(call __VERSION_BUMP,patch,$(NEXT_PATCH_VERSION)))
+$(eval $(call __VERSION_BUMP,minor,$(NEXT_MINOR_VERSION)))
+$(eval $(call __VERSION_BUMP,major,$(NEXT_MAJOR_VERSION)))
 
 release: clean
-	git flow release finish -s $(VERSION)
+	@if [ -f .bumpversion.cfg ]; then \
+		echo "=> release using 'bumpversion [...] release'"; \
+		bumpversion --commit --no-tag release; \
+	fi
+	git flow release finish -s $(VERSION:%rc=%)
 	git checkout $(GITFLOW_BR_MASTER)
 	git push origin
 	git checkout $(GITFLOW_BR_DEVELOP)
@@ -262,6 +272,10 @@ endif
 
 # Clean option
 clean:
+	@if [ -d "$(GITSTATS_DIR)" ]; then \
+		echo "==> removing '$(GITSTATS_DIR)' directory"; \
+		rm -rf $(GITSTATS_DIR); \
+	fi
 	@echo nothing to be cleaned for the moment
 
 
