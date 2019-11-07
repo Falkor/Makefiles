@@ -73,7 +73,7 @@ USE_BEAMER  = $(shell grep -l "{beamer}" $(MAIN_TEX) | xargs echo)
 
 # Various commands used during compilation
 LATEX        = $(shell which pdflatex)
-CMDLINE_OPTS = -synctex=1 -halt-on-error -interaction=batchmode
+CMDLINE_OPTS = -synctex=1 -halt-on-error -interaction=batchmode -shell-escape
 LATEX2HTML   = $(shell which latex2html)
 LATEX2RTF    = $(shell which latex2rtf)
 PANDOC       = $(shell which pandoc)
