@@ -339,7 +339,7 @@ $(TARGET_PDF): $(TARGETS_DEPS)
 
 
 # Useful hask for generating Exercise Correction CORRECTION_<main>.tex
-ifneq (, $(shell grep '\\usepackage.*{exercise}' *.tex *.sty))
+ifneq (, $(shell grep '\\usepackage.*{exercise}' *.tex *.sty 2>/dev/null))
 TMP_FILE4CORRECTION = .putSolutions.tex
 correction: clean
 	@if [ ! -f "$(TMP_FILE4CORRECTION)" ]; then  \
