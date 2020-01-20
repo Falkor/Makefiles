@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2018-11-30 00:30 svarrette>
+# Time-stamp: <Mon 2020-01-20 16:07 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -68,14 +68,22 @@ ifeq (,$(wildcard .bumpversion.cfg))
 NEXT_MAJOR_VERSION = $(shell expr $(MAJOR) + 1).0.0-b$(BUILD)
 NEXT_MINOR_VERSION = $(MAJOR).$(shell expr $(MINOR) + 1).0-b$(BUILD)
 NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)-b$(BUILD)
-else 
+else
 NEXT_MAJOR_VERSION = $(shell expr $(MAJOR) + 1).0.0
 NEXT_MINOR_VERSION = $(MAJOR).$(shell expr $(MINOR) + 1).0
 NEXT_PATCH_VERSION = $(MAJOR).$(MINOR).$(shell expr $(PATCH) + 1)
 endif
-# Default targets
-TARGETS =
 
+##################### Main targets #####################
+# Default targets - append your own with TARGETS += <xXx>
+TARGETS =
+# Default targets for 'make clean' - append your own with CLEAN_TARGETS += clean-<xXx>
+CLEAN_TARGETS = clean-gitstats
+# Default targets for 'make setup' - append your own with SETUP_TARGETS += setup-<xXx>
+SETUP_TARGETS = setup-git setup-gitflow setup-submodules setup-subtrees setup-githooks
+
+
+################### Custom Makefile  ###################
 # Local configuration - Kept for compatibity reason
 LOCAL_MAKEFILE = .Makefile.local
 
@@ -84,7 +92,7 @@ MAKEFILE_BEFORE = .Makefile.before
 MAKEFILE_AFTER  = .Makefile.after
 
 ### Main variables
-.PHONY: all archive clean fetch help release setup setup_git_hooks start_bump_major start_bump_minor start_bump_patch subtree_setup subtree_up subtree_diff test upgrade versioninfo doc
+.PHONY: all info archive clean help release start_bump_major start_bump_minor start_bump_patch subtree_setup subtree_up subtree_diff  upgrade versioninfo doc
 
 ############################### Now starting rules ################################
 # Load local settings, if existing (to override variable eventually)
@@ -127,9 +135,18 @@ archive: clean
 	tar -C ../ -cvzf ../$(SUPER_DIR)-$(VERSION).tar.gz --exclude ".svn" --exclude ".git"  --exclude "*~" --exclude ".DS_Store" $(SUPER_DIR)/
 
 ############################### Git Bootstrapping rules ################################
-setup:
+.PHONE: setup setup-git setup-gitflow setup-
+setup: $(SETUP_TARGETS)
+	@if [ -d "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" ]; then \
+		echo "=> setup local git hooks"; \
+		$(MAKE) setup_git_hooks; \
+	fi
+
+setup-git:
 	-git fetch origin
 	-git branch --track $(GITFLOW_BR_MASTER) origin/$(GITFLOW_BR_MASTER)
+
+setup-gitflow:
 	git config gitflow.branch.master     $(GITFLOW_BR_MASTER)
 	git config gitflow.branch.develop    $(GITFLOW_BR_DEVELOP)
 	git config gitflow.prefix.feature    feature/
@@ -137,12 +154,20 @@ setup:
 	git config gitflow.prefix.hotfix     hotfix/
 	git config gitflow.prefix.support    support/
 	git config gitflow.prefix.versiontag $(TAG_PREFIX)
+
+setup-submodules:
 	-$(MAKE) update
+
+setup-subtrees:
 	$(if $(GIT_SUBTREE_REPOS), $(MAKE) subtree_setup)
+
+setup-githooks:
 	@if [ -d "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" ]; then \
 		echo "=> setup local git hooks"; \
 		$(MAKE) setup_git_hooks; \
 	fi
+
+
 
 setup_git_hooks:
 	@if [ -n "$(SRC_PRECOMMIT_HOOK)" ]; then \
@@ -270,14 +295,14 @@ subtree_up:
 endif
 
 
-# Clean option
-clean:
+### Clean option
+clean: $(CLEAN_TARGETS)
+
+clean-gitstats:
 	@if [ -d "$(GITSTATS_DIR)" ]; then \
 		echo "==> removing '$(GITSTATS_DIR)' directory"; \
 		rm -rf $(GITSTATS_DIR); \
 	fi
-	@echo nothing to be cleaned for the moment
-
 
 # Perform various git statistics
 stats:
