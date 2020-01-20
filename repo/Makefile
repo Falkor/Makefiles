@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mon 2020-01-20 16:07 svarrette>
+# Time-stamp: <Mon 2020-01-20 16:08 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -164,12 +164,11 @@ setup-subtrees:
 setup-githooks:
 	@if [ -d "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" ]; then \
 		echo "=> setup local git hooks"; \
-		$(MAKE) setup_git_hooks; \
+		$(MAKE) _setup_git_hooks; \
 	fi
 
 
-
-setup_git_hooks:
+_setup_git_hooks:
 	@if [ -n "$(SRC_PRECOMMIT_HOOK)" ]; then \
 		if [ -f "$(GIT_ROOTDIR)/$(SRC_PRECOMMIT_HOOK)" ] && [ ! -f "$(GIT_ROOTDIR)/$(GIT_HOOKSDIR)/pre-commit" ]; then \
 			echo "=> setup Git pre-commit hook"; \
