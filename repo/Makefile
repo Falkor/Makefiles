@@ -32,7 +32,7 @@ TAG_PREFIX = "v"
 # GITFLOW_BR_MASTER  = $(shell git config --get gitflow.branch.master)
 # GITFLOW_BR_DEVELOP = $(shell git config --get gitflow.branch.develop)
 GITFLOW_BR_MASTER=production
-GITFLOW_BR_DEVELOP=master
+GITFLOW_BR_DEVELOP=devel
 
 CURRENT_BRANCH          = $(shell git rev-parse --abbrev-ref HEAD)
 GIT_BRANCHES            = $(shell git for-each-ref --format='%(refname:short)' refs/heads/ | xargs echo)
