@@ -85,8 +85,9 @@ PIP_REQUIREMENTS_FILE = requirements.txt
 ##################### Main targets #####################
 # Default targets - append your own with TARGETS += <xXx>
 TARGETS =
-# Default targets for 'make clean' - append your own with CLEAN_TARGETS += clean-<xXx>
+# Default targets for 'make [dist]clean' - append your own with [DIST]CLEAN_TARGETS += [dist]clean-<xXx>
 CLEAN_TARGETS = clean-gitstats
+DISTCLEAN_TARGETS =
 # Default targets for 'make setup' - append your own with SETUP_TARGETS += setup-<xXx>
 SETUP_TARGETS = setup-git setup-gitflow setup-submodules setup-subtrees setup-githooks
 # Default targets for 'make git-clone'. To append your own:
@@ -114,12 +115,15 @@ ifneq (,$(wildcard $(MAKEFILE_BEFORE)))
 include $(MAKEFILE_BEFORE)
 endif
 
+### Below default could be set in .Makefile.{local,before}
+# Default python virtualenv - by default under venv/$(basename <dir>)
+PYTHON_VENV_DIR ?= venv
+PYTHON_VENV     ?= $(SUPER_DIR)
 # Default Git clone parameters (url, target path for the working directory)
 PYENV_GIT_REPO_URL            ?= https://github.com/pyenv/pyenv.git
 PYENV_GIT_REPO                ?= $(XDG_DATA_HOME)/pyenv
 PYENV_VIRTUALENV_GIT_REPO_URL ?= https://github.com/pyenv/pyenv-virtualenv.git
 PYENV_VIRTUALENV_GIT_REPO     ?= $(XDG_DATA_HOME)/pyenv/plugins/pyenv-virtualenv
-
 
 # Required rule : what's to be done each time
 all: $(TARGETS)
@@ -148,6 +152,13 @@ info:
 	@echo "SRC_HOOKSDIR           -> '$(SRC_HOOKSDIR)'"
 	@echo "SRC_HOOKSDIR_TO_ROOTDIR-> '$(SRC_HOOKSDIR_TO_ROOTDIR)'"
 	@echo "SRC_PRECOMMIT_HOOK     -> '$(SRC_PRECOMMIT_HOOK)'"
+	@echo "--- Python stuff ---"
+	@echo "PYTHON_VENV_DIR        -> '${PYTHON_VENV_DIR}'"
+	@echo "PYTHON_VENV            -> '${PYTHON_VENV}'"
+	@echo "PYENV_GIT_REPO_URL     -> '${PYENV_GIT_REPO_URL}'"
+	@echo "PYENV_GIT_REPO         -> '${PYENV_GIT_REPO}'"
+	@echo "PYENV_VIRTUALENV_GIT_REPO_URL -> '${PYENV_VIRTUALENV_GIT_REPO_URL}'"
+	@echo "PYENV_VIRTUALENV_GIT_REPO     -> '${PYENV_VIRTUALENV_GIT_REPO}'"
 	@echo ""
 	@echo "Consider running 'make versioninfo' to get info on git versionning variables"
 
@@ -218,6 +229,7 @@ setup-shell-pyenv:
 
 
 # --- Direnv
+.PHONY: setup-direnv setup-pyenv setup-venv setup-python
 setup-direnv: setup-xdg
 	@echo "=> setup direnv -- see https://varrette.gforge.uni.lu/tutorials/pyenv.html"
 	mkdir -p $(XDG_CONFIG_HOME)/direnv
@@ -244,6 +256,10 @@ setup-pyenv: setup-xdg git-clone-pyenv git-clone-pyenv-virtualenv
 		curl -o $(XDG_CONFIG_HOME)/pyenv/init.sh https://raw.githubusercontent.com/Falkor/dotfiles/master/shell/available/pyenv.sh; \
 	fi
 	@$(MAKE) setup-shell-pyenv
+
+# --- venv
+setup-venv:
+	python3 -m venv $(PYTHON_VENV_DIR)/$(PYTHON_VENV)
 
 # --- python
 ifneq (,$(wildcard ./$(PIP_REQUIREMENTS_FILE)))
@@ -291,7 +307,7 @@ versioninfo:
 	@echo "next minor version: $(NEXT_MINOR_VERSION)"
 	@echo "next patch version: $(NEXT_PATCH_VERSION)"
 
-### Git flow management - this should be factorized
+### Git flow management 
 ifeq ($(HAS_GITFLOW),)
 start_bump_patch start_bump_minor start_bump_major release:
 	@echo "Unable to find git-flow on your system. "
@@ -397,8 +413,9 @@ subtree_up:
 endif
 
 
-### Clean option
+### [Dist]Clean option
 clean: $(CLEAN_TARGETS)
+distclean: $(DISTCLEAN_TARGETS)
 
 clean-gitstats:
 	@if [ -d "$(GITSTATS_DIR)" ]; then \
