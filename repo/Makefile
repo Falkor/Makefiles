@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Mon 2020-04-27 13:54 svarrette>
+# Time-stamp: <Wed 2020-05-06 10:24 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -167,11 +167,15 @@ archive: clean
 	tar -C ../ -cvzf ../$(SUPER_DIR)-$(VERSION).tar.gz --exclude ".svn" --exclude ".git"  --exclude "*~" --exclude ".DS_Store" $(SUPER_DIR)/
 
 ############################### Git Bootstrapping rules ################################
-.PHONE: setup setup-git setup-gitflow setup-xdg
+.PHONE: setup setup-git setup-gitflow setup-xdg setup-git-lfs
 setup: $(SETUP_TARGETS)
 	@if [ -d "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" ]; then \
 		echo "=> setup local git hooks"; \
 		$(MAKE) setup_git_hooks; \
+	fi
+	@if [ -f .gitattributes ] && [ -n "$(shell grep '=lfs' .gitattributes)" ]; then \
+		echo "=> setup git-lfs"; \
+		$(MAKE) setup-git-lfs; \
 	fi
 
 setup-git:
@@ -206,6 +210,16 @@ _setup_git_hooks:
 			ln -s ../../$(SRC_PRECOMMIT_HOOK) $(GIT_ROOTDIR)/$(GIT_HOOKSDIR)/pre-commit; \
 		fi ; \
 	fi
+
+ifneq (,$(shell which git-lfs 2>/dev/null))
+setup-git-lfs:
+	git-lfs pull
+else
+setup-git-lfs:
+	@echo "*** ERROR *** git-lfs extension not found on your system"
+	@echo "              install it (see https://git-lfs.github.com/) and run "
+	@echo "        make $@"
+endif
 
 setup-xdg:
 	@echo "=> setup XDG Base Directories"
@@ -307,7 +321,7 @@ versioninfo:
 	@echo "next minor version: $(NEXT_MINOR_VERSION)"
 	@echo "next patch version: $(NEXT_PATCH_VERSION)"
 
-### Git flow management 
+### Git flow management
 ifeq ($(HAS_GITFLOW),)
 start_bump_patch start_bump_minor start_bump_major release:
 	@echo "Unable to find git-flow on your system. "
