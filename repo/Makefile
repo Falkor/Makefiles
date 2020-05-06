@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Wed 2020-05-06 10:24 svarrette>
+# Time-stamp: <Wed 2020-05-06 10:26 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -176,6 +176,9 @@ setup: $(SETUP_TARGETS)
 	@if [ -f .gitattributes ] && [ -n "$(shell grep '=lfs' .gitattributes)" ]; then \
 		echo "=> setup git-lfs"; \
 		$(MAKE) setup-git-lfs; \
+	fi
+	@if [ -f .envrc ]; then \
+		$(MAKE) setup-direnv; \
 	fi
 
 setup-git:
