@@ -233,7 +233,7 @@ setup-xdg:
 define __SHELL_PROFILE_SOURCE_IF_PRESENT
 
 # Add the following to your favorite shell config (~/.bashrc or ~/.zshrc etc.)
-if [ -f "$1"]; then
+if [ -f "$1" ]; then
 	. $1
 fi
 
