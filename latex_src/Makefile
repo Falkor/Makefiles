@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Mon 2017-03-27 11:33 svarrette>
+# Time-stamp: <Mon 2020-01-20 10:38 svarrette>
 #
 # Copyright (c) 2016 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #
@@ -29,10 +29,30 @@ RELEASED_PDF = $(notdir $(PDF))
 GS      = $(shell which gs)
 GS_OPTS = -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress
 
+TAR_ARCHIVE_OPTS = --dereference --exclude '.git' --exclude '*~' --exclude '.root' --exclude '.texinfo' --exclude '.makefile.d' --exclude '*.graffle'
 
-all: $(DIRS)
+# Default targets
+TARGETS = $(DIRS)
 
-print:
+# Local configuration - Kept for compatibity reason
+LOCAL_MAKEFILE = .Makefile.local
+# Makefile custom hooks
+MAKEFILE_BEFORE = .Makefile.before
+MAKEFILE_AFTER  = .Makefile.after
+
+############################### Now starting rules ################################
+# Load local settings, if existing (to override variable eventually)
+ifneq (,$(wildcard $(LOCAL_MAKEFILE)))
+include $(LOCAL_MAKEFILE)
+endif
+ifneq (,$(wildcard $(MAKEFILE_BEFORE)))
+include $(MAKEFILE_BEFORE)
+endif
+
+all: $(TARGETS)
+
+# Test values of variables - for debug purposes
+info:
 	@echo "DIRS    = $(DIRS)"
 	@echo "SRCDIR  = $(SRCDIR)"
 	@echo "SRC     = $(SRC)"
@@ -65,3 +85,18 @@ endif
 		echo "==> processing '$$d'"; \
 		$(MAKE) -C $$d $@; \
 	done
+
+archive:
+	@for d in $(DIRS:/=); do \
+		if [ "$$d" == 'src' ]; then \
+			echo "ignoring $$d (potential LaTeX source directory) - consider running 'make archive' from top directory "; \
+			continue; \
+		fi ;\
+		echo "==> archiving $$d with"; \
+		echo "    tar cvzf src_$${d}.tgz $(TAR_ARCHIVE_OPTS) $$d"; \
+		tar cvzf src_$${d}.tgz $(TAR_ARCHIVE_OPTS) $$d; \
+	done
+
+ifneq (,$(wildcard $(MAKEFILE_AFTER)))
+include $(MAKEFILE_AFTER)
+endif

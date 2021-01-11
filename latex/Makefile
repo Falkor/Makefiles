@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Sat 2017-12-09 00:00 svarrette>
+# Time-stamp: <Thu 2020-09-03 19:19 svarrette>
 #     __  __       _         __ _ _            __   _         _____   __  __
 #    |  \/  | __ _| | _____ / _(_) | ___      / /  | |    __ |_   _|__\ \/ /
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \    / /   | |   / _` || |/ _ \\  /
@@ -73,7 +73,7 @@ USE_BEAMER  = $(shell grep -l "{beamer}" $(MAIN_TEX) | xargs echo)
 
 # Various commands used during compilation
 LATEX        = $(shell which pdflatex)
-CMDLINE_OPTS = -synctex=1 -halt-on-error -interaction=batchmode
+CMDLINE_OPTS = -synctex=1 -halt-on-error -interaction=batchmode -shell-escape
 LATEX2HTML   = $(shell which latex2html)
 LATEX2RTF    = $(shell which latex2rtf)
 PANDOC       = $(shell which pandoc)
@@ -89,7 +89,7 @@ endif
 BACKUP_FILES = $(shell find . -name "*~")
 # Files to move to $(TRASH_DIR) after compilation
 # Never add *.tex (or any reference to source files) for this variable.
-TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg  *.maf *.mtc* *.out *.nav *snm *.vrb *.rel *.thm *.bcf *-blx.bib *.run.xml *.idx
+TO_MOVE      = *.aux *.log *.toc *.lof *.lot *.bbl *.blg  *.maf *.mtc* *.out *.nav *snm *.vrb *.rel *.thm *.bcf *-blx.bib *.run.xml *.idx *.lol
 
 # Git stuff
 LAST_TAG_COMMIT = $(shell git rev-list --tags --max-count=1)
@@ -121,10 +121,15 @@ LIST_RELEASE_TO_DELETE = $(shell [ -d "$(RELEASE_DIR)" ] && ls $(RELEASE_DIR)/*.
 GS      = $(shell which gs)
 GS_OPTS = -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress
 
-### Main variables
+##################### Main targets #####################
+# Default targets - append your own with TARGETS += <xXx>
 BEFORE_TARGETS =
-TARGETS        = $(BEFORE_TARGETS) $(TARGET_PDF)
+TARGETS = $(BEFORE_TARGETS) $(TARGET_PDF)
 TARGETS_DEPS = $(TEX_SRC) $(MARKDOWN_SRC) $(STYLE_SRC) $(BIB_SRC) $(FIGURES)
+
+# Default targets for 'make [dist]clean' - append your own with [DIST]CLEAN_TARGETS += [dist]clean-<xXx>
+CLEAN_TARGETS = clean-latex
+DISTCLEAN_TARGETS =
 
 # Local configuration - Kept for compatibity reason
 LOCAL_MAKEFILE = .Makefile.local
@@ -339,9 +344,9 @@ $(TARGET_PDF): $(TARGETS_DEPS)
 
 
 # Useful hask for generating Exercise Correction CORRECTION_<main>.tex
-ifneq (, $(shell grep '\\usepackage.*{exercise}' *.tex *.sty))
+ifneq (, $(shell grep '\\usepackage.*{exercise}' *.tex *.sty 2>/dev/null))
 TMP_FILE4CORRECTION = .putSolutions.tex
-correction: clean
+correction: clean md
 	@if [ ! -f "$(TMP_FILE4CORRECTION)" ]; then  \
 	   	echo "\clearpage{\footnotesize \shipoutAnswer}" > $(TMP_FILE4CORRECTION); \
 	else \
@@ -382,7 +387,10 @@ move_to_trash:
     fi;
 
 # Clean option
-clean:
+clean: $(CLEAN_TARGETS)
+distclean: $(DISTCLEAN_TARGETS)
+
+clean-latex:
 	rm -f $(TARGETS) $(RTF) $(TO_MOVE) $(BACKUP_FILES) *.synctex.gz* CORRECTION_*
 	@if [ ! -z "$(OUTPUT_DIR)" -a -d $(OUTPUT_DIR) -a "$(OUTPUT_DIR)" != "." ]; then       \
 		for f in $(MAIN_TEX); do                                  \
