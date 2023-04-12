@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Wed 2023-04-12 11:46 svarrette>
+# Time-stamp: <Wed 2023-04-12 13:28 svarrette>
 #
 # Copyright (c) 2016 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #
@@ -87,12 +87,14 @@ release: clean
     done \
 	fi
 
-cover: # release
+cover: release
 	@if [ -n "$(PDFTOPPM)" ]; then \
 		for f in $(RELEASED_PDF); do \
-			echo "=> generating cover image (first page, converted to png using pdftoppm) for $$f"; \
-			$(PDFTOPPM) -png -r $(DPI) -f 1 -l 1 $$f cover_$$(basename $$f .pdf); \
-			mv cover_$$(basename $$f .pdf)-01.png cover_$$(basename $$f .pdf).png; \
+			if [ -f "$$f" ]; then \
+				echo "=> generating cover image (first page, converted to png using pdftoppm) for $$f"; \
+				$(PDFTOPPM) -png -r $(DPI) -f 1 -l 1 $$f cover_$$(basename $$f .pdf); \
+				mv cover_$$(basename $$f .pdf)-01.png cover_$$(basename $$f .pdf).png; \
+			fi; \
 		done \
 	else \
 		echo "Cannot find the 'pdftoppm' command in your PATH -- install it from poppler-utils package"; \
