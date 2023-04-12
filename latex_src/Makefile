@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Mon 2020-01-20 10:38 svarrette>
+# Time-stamp: <Wed 2023-04-12 11:46 svarrette>
 #
 # Copyright (c) 2016 Sebastien Varrette <Sebastien.Varrette@uni.lu>
 #
@@ -25,9 +25,15 @@ SRCDIR  = src
 SRC     = $(wildcard $(SRCDIR)/[^_]*.tex)
 PDF     = $(SRC:.tex=.pdf)
 RELEASED_PDF = $(notdir $(PDF))
+
 # Ghostscript for the help of producing optimized PDF
 GS      = $(shell which gs)
 GS_OPTS = -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/prepress
+
+# pdftoppm to help producing cover images
+PDFTOPPM = $(shell which pdftoppm)
+# Resolution of an image: dots per inch
+DPI = 300
 
 TAR_ARCHIVE_OPTS = --dereference --exclude '.git' --exclude '*~' --exclude '.root' --exclude '.texinfo' --exclude '.makefile.d' --exclude '*.graffle'
 
@@ -53,31 +59,49 @@ all: $(TARGETS)
 
 # Test values of variables - for debug purposes
 info:
-	@echo "DIRS    = $(DIRS)"
-	@echo "SRCDIR  = $(SRCDIR)"
-	@echo "SRC     = $(SRC)"
-	@echo "PDF     = $(PDF)"
+	@echo "DIRS     = $(DIRS)"
+	@echo "SRCDIR   = $(SRCDIR)"
+	@echo "SRC      = $(SRC)"
+	@echo "PDF      = $(PDF)"
 	@echo "RELEASED_PDF = $(RELEASED_PDF)"
-	@echo "GS      = $(GS)"
-	@echo "GS_OPTS = $(GS_OPTS)"
+	@echo "GS       = $(GS)"
+	@echo "GS_OPTS  = $(GS_OPTS)"
+	@echo "PDFTOPPM = $(PDFTOPPM)"
 
 # Add a specific 'release' target only if in the appropriate directory, such that
 # otherwise, it is just passed to the subdirectory using the generic '%' target
 ifneq ($(SRC),)
-.PHONY: release
+.PHONY: release cover
 release: clean
 	@echo "==> release a new PDF version of the LaTeX document '$(PDF)' from '`pwd`'"
 	$(MAKE) -C $(SRCDIR)
-	if [ -n "$(GS)" ]; then \
+	@if [ -n "$(GS)" ]; then \
 		for f in $(RELEASED_PDF); do \
 			echo "==> producing optimized PDF '$$f' for releasing from '`pwd`'"; \
 			$(GS) $(GS_OPTS) -sOutputFile=$$f $(SRCDIR)/$$f; \
     done \
-	else \
-		echo "==> blank copy of the (non-optimized) PDF from $(SRCDIR)"; \
-		cp $(PDF) .; \
+	else  \
+		for f in $(PDF); do \
+			echo "==> blank copy of the (non-optimized) PDF from $(SRCDIR)"; \
+		  cp $$f .; \
+    done \
 	fi
+
+cover: # release
+	@if [ -n "$(PDFTOPPM)" ]; then \
+		for f in $(RELEASED_PDF); do \
+			echo "=> generating cover image (first page, converted to png using pdftoppm) for $$f"; \
+			$(PDFTOPPM) -png -r $(DPI) -f 1 -l 1 $$f cover_$$(basename $$f .pdf); \
+			mv cover_$$(basename $$f .pdf)-01.png cover_$$(basename $$f .pdf).png; \
+		done \
+	else \
+		echo "Cannot find the 'pdftoppm' command in your PATH -- install it from poppler-utils package"; \
+	fi
+
 endif
+
+
+
 
 # generic rule -- pass whatever target (incl. none) to each subdirs.
 %:
