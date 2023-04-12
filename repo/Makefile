@@ -1,6 +1,6 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Tue 2021-02-16 13:27 svarrette>
+# Time-stamp: <Wed 2023-04-12 13:24 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
@@ -52,7 +52,7 @@ GITSTATS     = ./.submodules/gitstats/gitstats
 GITSTATS_DIR = gitstats
 # Below variable is used to sanitize stats by defining the (lowercase) strings to be
 # substituted to aggregate stats from the same author (eventually using different mails)
-# Ex: GITSTATS_SUBSTITUTE_PATTERN_CMD="sed -e 's/<old1>/<new1>/' -e 's/<old2>/<new2>'" 
+# Ex: GITSTATS_SUBSTITUTE_PATTERN_CMD="sed -e 's/<old1>/<new1>/' -e 's/<old2>/<new2>'"
 GITSTATS_SUBSTITUTE_PATTERN_CMD=sed -e '\#'
 
 # Branches to update on 'make up'
@@ -181,7 +181,7 @@ setup: $(SETUP_TARGETS)
 		echo "=> setup local git hooks"; \
 		$(MAKE) setup_git_hooks; \
 	fi
-	@if [ -f .gitattributes ] && [ -n "$(shell grep '=lfs' .gitattributes)" ]; then \
+	@if [ -f .gitattributes ] && [ -n "$(shell grep '=lfs' .gitattributes 2>/dev/null)" ]; then \
 		echo "=> setup git-lfs"; \
 		$(MAKE) setup-git-lfs; \
 	fi
