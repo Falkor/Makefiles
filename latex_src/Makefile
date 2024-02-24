@@ -1,8 +1,8 @@
 ####################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Wed 2023-04-12 13:28 svarrette>
+# Time-stamp: <Sat 2024-02-24 23:52 svarrette>
 #
-# Copyright (c) 2016 Sebastien Varrette <Sebastien.Varrette@uni.lu>
+# Copyright (c) 2016-2024 Sebastien Varrette
 #
 # [Recursive] Compilation of LaTeX projects, those sources are expected under
 # $(SRCDIR) (_i.e._ src/ ).
@@ -67,6 +67,7 @@ info:
 	@echo "GS       = $(GS)"
 	@echo "GS_OPTS  = $(GS_OPTS)"
 	@echo "PDFTOPPM = $(PDFTOPPM)"
+	@echo "DPI      = $(DPI)"
 
 # Add a specific 'release' target only if in the appropriate directory, such that
 # otherwise, it is just passed to the subdirectory using the generic '%' target
@@ -87,22 +88,24 @@ release: clean
     done \
 	fi
 
-cover: release
-	@if [ -n "$(PDFTOPPM)" ]; then \
-		for f in $(RELEASED_PDF); do \
-			if [ -f "$$f" ]; then \
-				echo "=> generating cover image (first page, converted to png using pdftoppm) for $$f"; \
-				$(PDFTOPPM) -png -r $(DPI) -f 1 -l 1 $$f cover_$$(basename $$f .pdf); \
-				mv cover_$$(basename $$f .pdf)-01.png cover_$$(basename $$f .pdf).png; \
-			fi; \
-		done \
-	else \
-		echo "Cannot find the 'pdftoppm' command in your PATH -- install it from poppler-utils package"; \
-	fi
+ifeq ($(PDFTOPPM),)
+cover:
+	@echo "Unable to find the 'pdftoppm' utility. Consider installing it: 'apt install poppler-utils' under Debian"
+else
+cover:
+	@for f in $(RELEASED_PDF); do \
+		if [ -f "$$f" ]; then \
+			echo "=> generating cover image (first page, converted to png using pdftoppm) for $$f"; \
+			echo $(PDFTOPPM) -png -r $(DPI) -f 1 -l 1 $$f cover_$$(basename $$f .pdf); \
+			$(PDFTOPPM) -png -r $(DPI) -f 1 -l 1 $$f cover_$$(basename $$f .pdf); \
+			echo "=> renaming cover file"; \
+			mv cover_$$(basename $$f .pdf)-*.png cover_$$(basename $$f .pdf).png; \
+		fi; \
+	done
 
 endif
 
-
+endif # ifneq ($(SRC),)
 
 
 # generic rule -- pass whatever target (incl. none) to each subdirs.
@@ -122,6 +125,17 @@ archive:
 		echo "    tar cvzf src_$${d}.tgz $(TAR_ARCHIVE_OPTS) $$d"; \
 		tar cvzf src_$${d}.tgz $(TAR_ARCHIVE_OPTS) $$d; \
 	done
+
+help:
+	@echo "=== List of available commands: ==="
+	@echo " - make release: Compile LaTeX files under $(SRCDIR) and release an [optimized] PDF"
+	@echo "                 in the current directory"
+	@echo " - make cover: create a cover PNG file (image of the 1st page of the released PDF) using"
+	@echo "               the pdftoppm utility (from the poppler-utils package)"
+	@echo
+	@echo "Any other command is passed to the subdirectory(ies): $(DIRS), typically as follows:"
+	@echo "   make -C <subdir> <command>"
+
 
 ifneq (,$(wildcard $(MAKEFILE_AFTER)))
 include $(MAKEFILE_AFTER)

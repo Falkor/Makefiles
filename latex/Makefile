@@ -7,8 +7,7 @@
 #    | |  | | (_| |   <  __/  _| | |  __/   / /    | |__| (_| || |  __//  \
 #    |_|  |_|\__,_|_|\_\___|_| |_|_|\___|  /_/     |_____\__,_||_|\___/_/\_\
 #
-# Copyright (c) 2004-2015 Sebastien Varrette <Sebastien.Varrette@uni.lu>
-# .             http://varrette.gforge.uni.lu
+# Copyright (c) 2004-2024 Sebastien Varrette
 #
 ####################################################################################
 # Compilation of files written in LaTeX.
