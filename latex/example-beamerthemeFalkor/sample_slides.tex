@@ -1,27 +1,31 @@
 % =============================================================================
 % File:  sample_slides.tex --  Example of the use of the Falkor Beamer theme
 % Author(s): Sebastien Varrette <Sebastien.Varrette@uni.lu>
-% Time-stamp: <Lun 2013-12-02 22:23 svarrette>
-% 
-% Copyright (c) 2012 Sebastien Varrette <Sebastien.Varrette@uni.lu>
-% .             http://varrette.gforge.uni.lu
-% 
+% Time-stamp: <Mon 2015-06-15 11:30 svarrette>
+%
+% Copyright (c) 2012-2015 Sebastien Varrette <Sebastien.Varrette@uni.lu>
+%
 % For more information:
 % - LaTeX: http://www.latex-project.org/
 % - Beamer: https://bitbucket.org/rivanvx/beamer/
 % - LaTeX symbol list:
 % http://www.ctan.org/tex-archive/info/symbols/comprehensive/symbols-a4.pdf
-% 
+%
 % Latest version of these files can be found on Github:
-% 
-
+% https://github.com/Falkor/beamerthemeFalkor
 % =============================================================================
-\documentclass{beamer}
-% \documentclass[draft]{beamer}
-\usepackage{_style}
 
-% The key part to use my theme
-\usetheme{Falkor}
+\documentclass[aspectratio=169]{beamer}
+% \documentclass[draft]{beamer}
+
+\graphicspath{%
+  {images/}%
+}
+
+% The key part to use my theme -- if you precise nothing, the image that
+% illustrate the slides is assumed to be images/slides_image.jpg
+\usetheme[image=images/logo_ULHPC.pdf]{Falkor}
+
 
 % Not integrated in my theme as not everybody wants that
 \AtBeginSection[]
@@ -32,44 +36,43 @@
   }
 }
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% Header %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \title{The \texttt{Falkor} \LaTeX Beamer Style}
-\subtitle{Overview and Usage}
+\subtitle{A Minimal Example}
 
-\author{S\'ebastien Varrette}
-\institute[CSC research unit]{
-  Computer Science and Communications (CSC) Research Unit,
-  University of Luxembourg, Luxembourg
+\author{Sebastien Varrette}
+\institute[PCOG Research unit]{
+  Parallel Computing and Optimization Group (\href{http://pcog.uni.lu}{PCOG}),
+  University of Luxembourg (\href{http://www.uni.lu}{UL}), Luxembourg
 }
 
-% Mandatory to define a logo - otherwise compilation will fail in an unobvious
-% manner.
+% Mandatory to **declare** a logo to be placed on the bottom right -- normally the
+% university logo. ADAPT ACCORDINGLY:
 \pgfdeclareimage[height=0.8cm]{logo}{images/logo_UL.pdf}
-\logo{\pgfuseimage{logo}}
+
 \date{}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Body %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 
 \begin{frame}
-    \vspace{2.5em}
-    \titlepage
+  \vspace{2.5em}
+  \titlepage
 \end{frame}
 
 % .......
 \frame{
   \begin{center}
-      \textbf{Latest versions available on
-        \href{https://github.com/Falkor/}{Github}}:
-      \vfill
-      \begin{description}
-        \item[Beamer theme Falkor:] \hfill
-          \myurl{https://github.com/Falkor/beamerthemeFalkor}
-        \item[Generic Makefiles:] \hfill
-          \myurl{https://github.com/Falkor/Makefiles}
-        \item[Git bootstrapping script:] \hfill
-          \myurl{https://github.com/Falkor/Makefiles/blob/devel/scripts/}
-      \end{description}
+    \textbf{Latest versions available on
+      \href{https://github.com/Falkor/}{Github}}:
+    \vfill
+    \begin{description}
+      \item[Beamer theme Falkor:] \hfill
+      \myurl{https://github.com/Falkor/beamerthemeFalkor}
+      \item[Generic Makefiles:] \hfill
+      \myurl{https://github.com/Falkor/Makefiles}
+    \end{description}
   \end{center}
 }
 
@@ -82,236 +85,135 @@
 }
 
 % ===============================================
-\section{Installation}
-
-% ........................
-\frame[containsverbatim]{
-  \frametitle{Basic usage}
-
-  \begin{block}{}%Bootstrap a new working directory}
-      \begin{itemize}
-        \item Get the latest version on
-          \href{https://github.com/Falkor/beamerthemeFalkor}{Github}
-          \begin{cmdline}
-              \cmdlineentry{cd /path/to/cloning/dir}\\
-              \cmdlineentry{git clone https://github.com/Falkor/beamerthemeFalkor.git}
-          \end{cmdline}
-
-        \item Copy \href{https://github.com/Falkor/beamerthemeFalkor/blob/master/beamerthemeFalkor.sty}{beamerthemeFalkor.sty} at the root of your \LaTeX document
-
-
-        \item Place the following code on your \LaTeX\ file:
-          \begin{lstlisting}[basicstyle=\tiny,numbers=none]
-              \usetheme{Falkor}
-          \end{lstlisting}
-
-        \item That's all (normally).
-          \begin{itemize}
-              \itemhook you might want to use my \href{https://github.com/Falkor/Makefiles/blob/devel/latex/Makefile}{Generic Makefile for \LaTeX}
-          \end{itemize}
-
-          % \item Duplicate the sample structure of the freshly cloned repository
-          %   \begin{cmdline}
-          %       \cmdlineentry{cd /path/to/working/dir}\\
-          %       \cmdlineentry{rsync -avzu --exclude "*.git" $\backslash$\\ ~~~~~/path/to/cloning/dir/beamerthemeFalkor/ .}
-          %   \end{cmdline}
-          % \item Copy and adapt the sample document \texttt{sample\_slides.tex}
-          %   \begin{itemize}
-          %     \item[$\hookrightarrow$] run \texttt{make} to generate \texttt{sample\_slides.pdf}
-          %   \end{itemize}
-      \end{itemize}
-  \end{block}
-}
+\section{Introduction}
+% ===============================================
 
 % .......
 \frame{
-  \frametitle{Full sample example \hfill{\tiny (\textit{i.e.} these slides)}}
-
-  \begin{block}{}
-      \begin{itemize}
-        \item To copy a full working example
-          \begin{cmdline}
-              \cmdlineentry{cd /path/to/cloning/dir}\\
-              \cmdlineentry{git clone https://github.com/Falkor/beamerthemeFalkor.git}\\
-              \cmdlineentry{cd /path/to/working/dir}\\
-              \cmdlineentry{rsync -avzu -L --exclude "*.git" $\backslash$\\~~~~~~~/path/to/cloning/dir/beamerthemeFalkor/ .}\\
-              \cmdlineentry{make}
-          \end{cmdline}
-      \end{itemize}
-  \end{block}
-  \begin{itemize}
-    \item This will generate the file \texttt{sample\_slides.pdf}.
-      \begin{itemize}
-          \itemhook adapt accordingly...
-      \end{itemize}
-  \end{itemize}
-
-}
-
-
-
-
-\frame{
-  \frametitle{The scripted appraoch}
-
-  \begin{block}{Git sub-modules approach}
-      \begin{itemize}
-        \item Assuming you want to use the theme in an existing git repo
-          \begin{cmdline}
-              \cmdlineentry{cd /path/to/working/dir}\\
-              \cmdlineentry{git submodule add $\backslash$\\
-                ~~~~~https://github.com/Falkor/beamerthemeFalkor.git
-                $\backslash$\\
-                ~~~~~.beamerthemeFalkor}\\
-              \cmdlineentry{ln -s
-                .beamerthemeFalkor/beamerthemeFalkor.sty .}
-          \end{cmdline}
-      \end{itemize}
-  \end{block}
-}
-
-\frame{
-  \frametitle{Changing the logo}
+  \frametitle{Introduction}
 
   \begin{itemize}
-    \item The logo used by the theme is \texttt{images/slide\_image.jpg}
-    \item To use another logo:
-      \begin{cmdline}
-          \cmdlineentry{cd images}\\
-          \cmdlineentry{wget http://path/to/myimage.jpg}\\
-          \cmdlineentry{ln -sf myimage.jpg slide\_image.jpg}\\
-      \end{cmdline}
+    \item Topic of the talk
+    \begin{itemize}
+      \item a sub item
+    \end{itemize}
   \end{itemize}
+
+  \begin{block}{A block -- Objective}
+    \begin{enumerate}
+      \item first objective
+      \item second objective
+    \end{enumerate}
+  \end{block}
+
 }
 
 % ===============================================
-\section{Some example slides}
+\section{Related Work}
+% ===============================================
 
-% ............
-\frame{
-
-  \frametitle{Objectives of our work}
-
-  \begin{itemize}
-    \item Better than assumptions/\textit{a-priori}: concrete models and
-      experiments
-  \end{itemize}
-
-  \begin{alertblock}{}
-      \begin{itemize}
-        \item Evaluate impact of the underlying hypervisor
-          \begin{itemize}
-              \itemhook at the heart of \textbf{any} cloud middleware so far
-              % \itemhook analysis of the most widespread virtualization
-              % frameworks
-              \itemhook \emph{lightweight},
-              \emph{high-level} model of a \emph{virtualized} machine.
-          \end{itemize}
-        \item Evaluate a real HPC platform (or anything as close as possible)
-          \begin{itemize}
-              \itemhook concrete deployment on top of the Grid5000 platform
-              \itemhook select benchmarking tools to reflect an HPC usage
-          \end{itemize}
-      \end{itemize}
-  \end{alertblock}
-
-
-  ~\vfill
-  {\tiny
-    \mycite{SBAC-PAD13} S. Varrette,  M. Guzek, V. Plugaru, J. E. Sanchez, and P. Bouvry.
-    "\textit{HPC Performance and Energy-Efficiency of Xen, KVM and VMware Hypervisors}". In Proc. of the 25th IEEE Symposium on Computer Architecture and High Performance (SBAC-PAD'13), Oct 2013.
-    % Do not forget the below space
-
-  }
-
-}
-
+\subsection{A First Topic}
 
 % .......
-\frame[t]{
-  \frametitle{The Grid'5000 Testbed \hfill \myurl{http://www.grid5000.fr}}
+\frame{
+  \frametitle{State-of-the-art: First Topic}
+  \hfill\includegraphics[width=4em]{logo_github.png}
 
   \begin{itemize}
-    \item Large scale nation wide infrastructure \hfill\includegraphics{logo_G5K.png}
-      \begin{itemize}
-          \itemhook for large scale parallel and distributed computing research.
-      \end{itemize}
-
+    \item<+-> first item
+    \item<+-> second item
+    \begin{itemize}
+      \item sub item
+    \end{itemize}
   \end{itemize}
-  % ~~~~~~~~~~~~~~
-  \begin{columns}
-      \column{0.4\textwidth}
-      \includegraphics[scale=0.9]{Renater5-g5k.jpg}
-      \column{0.6\textwidth}
-      \begin{itemize}
-        \item 10 sites in France
-        \item \emph{Abroad}: Luxembourg, Porto Allegre
-        \item Total: \textbf{7896} cores over \textbf{26} clusters
-        \item 1-10GbE / Myrinet / Infiniband interconnect
-        \item \emph{Kadeploy} functionnality
-      \end{itemize}
-  \end{columns}
+
+  \uncover<3>{
+    \begin{alertblock}{}
+      \centering
+      That's and \alert{alertblock} to display important results
+    \end{alertblock}
+  }
 }
 
 
-\frame[containsverbatim]{
-  \frametitle{A slide with listings}%\frametitle{Problem}
-  \begin{block}{A JavaScript program}
-      \begin{lstlisting}[basicstyle=\tiny,numbers=none]
-          function fibo(n)
-          {
-            if( n <= 1 )
-            {
-              return n;
-            }
-            var res = fibo(n-1) + fibo(n-2);
-            return res;
-          }
-          n = parseFloat(arguments[1])
-          nn = fibo(n)
-          print(nn)
-      \end{lstlisting}
+\subsection{A second Topic}
 
-  \end{block}
+% .......
+\frame{
+  \frametitle{State-of-the-art: Second Topic}
+
+  \begin{exampleblock}{Example}
+    An example block
+  \end{exampleblock}
 
 }
 
+% ===============================================
+\section{Experimental Setup}
+% ===============================================
 
+% ===============================================
+\section{Experimental Validation}
+% ===============================================
+
+\subsection{Test Case 1}
+\subsection{Test Case 2}
+
+
+% ===============================================
 \section{Conclusion}
+% ===============================================
 
 % ............
 \begin{frame}
-    \frametitle{Conclusion}
+  \frametitle{Conclusion}
 
+  \begin{itemize}
+    \item Summary point 1
+    \item Summary point 2
+  \end{itemize}
+
+  \begin{block}{Perspectives}
     \begin{itemize}
-      \item Summary point 1
-      \item Summary point 2
+      \item Improve point 1
+      \item Improve point 2
     \end{itemize}
-
-    \begin{block}{Perspectives}
-        \begin{itemize}
-          \item Improve point 1
-          \item Improve point 2
-        \end{itemize}
-    \end{block}
+  \end{block}
 
 
 \end{frame}
 
 
-% ======================== END =========================
 
+
+
+% ======================== END =========================
 \section*{Thank you for your attention...}
 \frame{
   \frametitle{Questions?}
-  \begin{center}
-      \includegraphics[scale=0.2]{question.jpg}
-  \end{center}
+   % ~~~~~~~~~~~~~~
+   \begin{columns}
+       \column{0.5\textwidth}
+       %\emph{Contact}\\
+       {\tiny
+         \emph{Sebastien Varrette}\\
+         ~~~~ \textit{mail:} \href{mailto:sebastien.varrette@uni.lu}{sebastien.varrette@uni.lu}\\
+         ~~~~ Office E-007\\
+         ~~~~ Campus Kirchberg\\
+         ~~~~ 6, rue Coudenhove-Kalergi\\
+         ~~~~ L-1359 Luxembourg
 
-  {\tiny
-    \tableofcontents
+       }
+       \column{0.5\textwidth}
+       %\scalebox{8}{\emph{?}}
+       \includegraphics[width=1.5in]{question.jpg}
+   \end{columns}
+   % Below is the table of content over 2 columns
+   \vfill
+   \begin{multicols}{2}
+     {\tiny \tableofcontents}
+   \end{multicols}
 
-  }
 }
 
 \newcounter{finalframe}
@@ -322,14 +224,8 @@
 \frame{
   \frametitle{Appendix}
 
-  \begin{acronym}\setlength\itemsep{-0.3em}
-      \acro{DFT}{Discrete Fourier Transform}
-      \acro{EA}{Evolutionary Algorithm}
-      \acro{PRNG}{[Pseudo]-Random Number Generator}
-      \acro{UL}{University of Luxembourg}
-  \end{acronym}
+  A first appendix page\footnote{notice the slide number below...}
 
-  \textit{*Note: notice the slide number below...}
 }
 
 % .......
@@ -347,10 +243,10 @@
 
 % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % eof
-% 
+%
 % Local Variables:
 % mode: latex
 % mode: flyspell
-% mode: auto-fill
-% fill-column: 80
+% mode: visual-line
+% TeX-master: "."
 % End:
