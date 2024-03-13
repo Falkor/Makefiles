@@ -1,17 +1,16 @@
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
-# Time-stamp: <Wed 2023-04-12 13:24 svarrette>
+# Time-stamp: <Wed 2024-03-13 18:21 svarrette>
 #     __  __       _         __ _ _
 #    |  \/  | __ _| | _____ / _(_) | ___
 #    | |\/| |/ _` | |/ / _ \ |_| | |/ _ \
 #    | |  | | (_| |   <  __/  _| | |  __/
 #    |_|  |_|\__,_|_|\_\___|_| |_|_|\___|
 #
-# Copyright (c) 2012 Sebastien Varrette <Sebastien.Varrette@uni.lu>
-# .             http://varrette.gforge.uni.lu
+# Copyright (c) 2012-2024 Sebastien Varrette <Sebastien.Varrette@gmail.com>
 #
 ####################################################################################
-#
+# Generic Makefile to pilot a git[-flow] repository action
 ############################## Variables Declarations ##############################
 SHELL = /bin/bash
 
@@ -93,9 +92,8 @@ TARGETS =
 CLEAN_TARGETS = clean-gitstats
 DISTCLEAN_TARGETS =
 # Default targets for 'make setup' - append your own with SETUP_TARGETS += setup-<xXx>
-SETUP_TARGETS = setup-git setup-gitflow setup-submodules setup-subtrees setup-githooks
-# Default targets for 'make git-clone'. To append your own:
-#   Define
+SETUP_TARGETS = setup-git setup-gitflow setup-submodules setup-githooks
+# Default targets for 'make git-clone'.
 GIT_CLONE_TARGETS =
 
 
@@ -124,9 +122,6 @@ include $(MAKEFILE_CUSTOM)
 endif
 
 ### Below default could be set in .Makefile.{local,before}
-# Default python virtualenv - by default under venv/$(basename <dir>)
-PYTHON_VENV_DIR ?= venv
-PYTHON_VENV     ?= $(SUPER_DIR)
 # Default Git clone parameters (url, target path for the working directory)
 PYENV_GIT_REPO_URL            ?= https://github.com/pyenv/pyenv.git
 PYENV_GIT_REPO                ?= $(XDG_DATA_HOME)/pyenv
@@ -154,15 +149,12 @@ info:
 	@echo "GIT_BRANCHES           -> '$(GIT_BRANCHES)'"
 	@echo "GIT_REMOTES            -> '$(GIT_REMOTES)'"
 	@echo "GIT_DIRTY              -> '$(GIT_DIRTY)'"
-	@echo "GIT_SUBTREE_REPOS      -> '$(GIT_SUBTREE_REPOS)'"
 	@echo "GIT_BRANCHES_TO_UPDATE -> '$(GIT_BRANCHES_TO_UPDATE)'"
 	@echo "GIT_HOOKSDIR           -> '$(GIT_HOOKSDIR)'"
 	@echo "SRC_HOOKSDIR           -> '$(SRC_HOOKSDIR)'"
 	@echo "SRC_HOOKSDIR_TO_ROOTDIR-> '$(SRC_HOOKSDIR_TO_ROOTDIR)'"
 	@echo "SRC_PRECOMMIT_HOOK     -> '$(SRC_PRECOMMIT_HOOK)'"
 	@echo "--- Python stuff ---"
-	@echo "PYTHON_VENV_DIR        -> '${PYTHON_VENV_DIR}'"
-	@echo "PYTHON_VENV            -> '${PYTHON_VENV}'"
 	@echo "PYENV_GIT_REPO_URL     -> '${PYENV_GIT_REPO_URL}'"
 	@echo "PYENV_GIT_REPO         -> '${PYENV_GIT_REPO}'"
 	@echo "PYENV_VIRTUALENV_GIT_REPO_URL -> '${PYENV_VIRTUALENV_GIT_REPO_URL}'"
@@ -185,9 +177,6 @@ setup: $(SETUP_TARGETS)
 		echo "=> setup git-lfs"; \
 		$(MAKE) setup-git-lfs; \
 	fi
-	@if [ -f .envrc ]; then \
-		$(MAKE) setup-direnv; \
-	fi
 
 setup-git:
 	-git fetch origin
@@ -204,9 +193,6 @@ setup-gitflow:
 
 setup-submodules:
 	-$(MAKE) update
-
-setup-subtrees:
-	$(if $(GIT_SUBTREE_REPOS), $(MAKE) subtree_setup)
 
 setup-githooks:
 	@if [ -d "$(GIT_ROOTDIR)/$(SRC_HOOKSDIR)" ]; then \
@@ -283,22 +269,14 @@ setup-pyenv: setup-xdg git-clone-pyenv git-clone-pyenv-virtualenv
 	@$(MAKE) setup-shell-pyenv
 
 # --- venv
-setup-venv:
-	python3 -m venv $(PYTHON_VENV_DIR)/$(PYTHON_VENV)
-
-# --- python
-ifneq (,$(wildcard ./$(PIP_REQUIREMENTS_FILE)))
-setup-python:
-	@echo "=> updating pip version"
-	pip install --upgrade pip
-	@echo "=> installing Python dependencies from Requirements files '$(PIP_REQUIREMENTS_FILE)'"
-	pip install -r $(PIP_REQUIREMENTS_FILE)
-else
-setup-python:
-	@echo "=> updating pip version"
-	pip install --upgrade pip
+ifneq ("$(wildcard .Makefile.venv)","")
+include .Makefile.venv
+setup-python: setup-python-deps
 endif
-
+ifneq ("$(wildcard Makefile.venv)","")
+include Makefile.venv
+setup-python: setup-python-deps
+endif
 
 
 ### Git clone
@@ -367,76 +345,35 @@ release: clean
 		bumpversion --commit --no-tag release; \
 	fi
 	git flow release finish -s $(VERSION:%rc=%)
-	git checkout $(GITFLOW_BR_MASTER)
+	git switch $(GITFLOW_BR_MASTER)
 	git push origin
-	git checkout $(GITFLOW_BR_DEVELOP)
+	git switch $(GITFLOW_BR_DEVELOP)
 	git push origin
 	git push origin --tags
 endif
 
 ### Git (submodule|branch)  management: pull and upgrade to the latest version
-up update:
-	$(if $(GIT_DIRTY), $(error "Unable to pull latest commits: Dirty Git repository"))
-	@for br in $(GIT_BRANCHES_TO_UPDATE); do \
-		echo -e "\n=> Pulling and updating the local branch '$$br'\n"; \
-		git checkout $$br; \
-		git pull origin $$br; \
-	done
-	git checkout $(CURRENT_BRANCH)
+git-submodule-update:
 	@echo "=> updating (NOT upgrading) git submodule"
 	git submodule init
 	git submodule update
 
+up update:
+	$(if $(GIT_DIRTY), $(error "Unable to pull latest commits: Dirty Git repository"))
+	@for br in $(GIT_BRANCHES_TO_UPDATE); do \
+		echo -e "\n=> Pulling and updating the local branch '$$br'\n"; \
+		git switch $$br; \
+		git pull origin $$br; \
+	done
+	git switch $(CURRENT_BRANCH)
+	$(MAKE) git-submodule-update
+
 ### Git submodule upgrade
 upgrade: update
-	git submodule foreach 'git fetch origin; git checkout $$(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
+	git submodule foreach 'git fetch origin; git switch $$(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
 	-@for submoddir in $(shell git submodule status | awk '{ print $$2 }' | xargs echo); do \
 		git commit -s -m "Upgrading Git submodule '$$submoddir' to the latest version" $$submoddir || true;\
 	done
-
-
-### Git subtree management
-ifeq ($(GIT_SUBTREE_REPOS),)
-subtree_setup subtree_diff subtree_up:
-	@echo "no repository configured in GIT_SUBTREE_REPOS..."
-else
-subtree_setup:
-	@for elem in $(GIT_SUBTREE_REPOS); do \
-		url=`echo $$elem | cut -d '|' -f 1`; \
-		repo=`basename $$url .git`; \
-		if [[ ! "$(GIT_REMOTES)" =~ "$$repo"  ]]; then \
-			echo "=> initializing Git remote '$$repo'"; \
-			git remote add -f $$repo $$url; \
-		fi \
-	done
-
-subtree_diff:
-	@for elem in $(GIT_SUBTREE_REPOS); do \
-		url=`echo $$elem | cut -d '|' -f 1`; \
-		repo=`basename $$url .git`; \
-		path=`echo $$repo | tr '-' '/'`; \
-		br=`echo $$elem | cut -d '|' -f 2`;  \
-		[ "$$br" == "$$url" ] && br='master'; \
-		echo -e "\n============ diff on subtree '$$path' with remote '$$repo/$$br' ===========\n"; \
-		git diff $${repo}/$$br $(CURRENT_BRANCH):$$path; \
-	done
-
-subtree_up:
-	$(if $(GIT_DIRTY), $(error "Unable to pull subtree(s): Dirty Git repository"))
-	@for elem in $(GIT_SUBTREE_REPOS); do \
-		url=`echo $$elem | cut -d '|' -f 1`; \
-		repo=`basename $$url .git`; \
-		path=`echo $$repo | tr '-' '/'`; \
-		br=`echo $$elem | cut -d '|' -f 2`;  \
-		[ "$$br" == "$$url" ] && br='master'; \
-		echo -e "\n===> pulling changes into subtree '$$path' using remote '$$repo/$$br'"; \
-		echo -e "     \__ fetching remote '$$repo'"; \
-		git fetch $$repo; \
-		echo -e "     \__ pulling changes"; \
-		git subtree pull --prefix $$path --squash $${repo} $${br}; \
-	done
-endif
-
 
 ### [Dist]Clean option
 clean: $(CLEAN_TARGETS)
