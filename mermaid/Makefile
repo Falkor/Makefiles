@@ -66,7 +66,7 @@ png: $(PNG)
 
 %.pdf: %.mmd
 	@echo "=> generating $@ from mermaid diagram $<"
-	$(PODMAN) run $(PODMAN_RUN_OPTS) ghcr.io/$(GHCR_OWNER)/$(GHCR_IMAGE)/$(MMDC) --pdfFit -i $< -o $@
+	$(PODMAN) run $(PODMAN_RUN_OPTS) ghcr.io/$(GHCR_OWNER)/$(GHCR_IMAGE)/$(MMDC) --pdfFit -i $< -o $@ -b transparent
 
 # %.png: %.mmd
 # 	@echo "=> generating $@ (transparent PNG) from mermaid diagram $<"
