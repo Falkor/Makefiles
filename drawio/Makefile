@@ -47,9 +47,9 @@ png: $(PNG)
 	@echo "=> generating $@ from drawio diagram $<"
 	$(DRAWIO) $(DRAWIO_OPTS) -f pdf $< -o $@
 
-%.png: %.drawio
-	@echo "=> generating $@ from drawio diagram $<"
-	$(DRAWIO) $(DRAWIO_OPTS) -f png $< -o $@
+%.png: %.pdf
+	@echo "=> generating $@ from PDF file $<"
+	convert -density 600 -quality 100 $< $@
 
 
 # FIXME : use pdftoppm -png instead
