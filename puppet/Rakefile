@@ -1,0 +1,347 @@
+##############################################################################
+# Rakefile - Configuration file for rake (http://rake.rubyforge.org/)
+# Time-stamp: <Thu 2025-10-02 08:55 svarrette>
+#
+# Copyright (c) 2017  S. Varrette and UL HPC Team
+#                       ____       _         __ _ _
+#                      |  _ \ __ _| | _____ / _(_) | ___
+#                      | |_) / _` | |/ / _ \ |_| | |/ _ \
+#                      |  _ < (_| |   <  __/  _| | |  __/
+#                      |_| \_\__,_|_|\_\___|_| |_|_|\___|
+#
+# Use 'rake -T' to list the available actions
+#
+# Resources:
+# * http://www.stuartellis.eu/articles/rake/
+##############################################################################
+require 'falkorlib'
+require 'pathname'
+require 'rake/clean'
+require 'ra10ke'
+
+TOP_SRCDIR  = File.dirname(__FILE__)
+DEPS_TMPDIR = '.deps'
+PUPPET_MASTER_CLUSH_GROUP = '@puppet:master'
+
+# Clean/globber tasks
+CLEAN.include('**/*~')
+CLOBBER.include(DEPS_TMPDIR)
+CLOBBER.include("modules/*")
+
+# Pre-checks
+if FalkorLib::Common.command?('prsync')
+    prsync_cmd='prsync'
+elsif FalkorLib::Common.command?('parallel-rsync')
+    prsync_cmd='parallel-rsync'
+else
+    FalkorLib::Common.error('prsync (parallel rsync), part of the pssh package, is not installed on your system and is required to deploy the puppet environment')
+end
+
+FalkorLib::Common.error('clush is not installed on your system and is required to deploy the puppet environment') unless FalkorLib::Common.command?('clush')
+PUPPET_MASTER_HOSTLIST  = `nodeset -e #{PUPPET_MASTER_CLUSH_GROUP}`.chomp
+
+## placeholder for custom configuration of FalkorLib.config.*
+## See https://github.com/Falkor/falkorlib
+# Git flow customization
+FalkorLib.config.gitflow do |c|
+    c[:branches] = {
+                    :master  => 'production',
+                    :develop => 'devel'
+                   }
+end
+
+###### notify ######
+# description
+# Supported options:
+#  * :force [boolean] force action
+##
+def do_notify(msg, options = {})
+    options['title']   = 'Puppet Control Repo' unless options['title']
+    options['sound']   = 'default'             unless options['sound']
+    options['timeout'] = 4                     unless options['timeout']
+
+    # notification command
+    if (`uname`.chomp == 'Darwin')
+        notify_cmd = "terminal-notifier -title '#{options['title']}' -sound '#{options['sound']}' -timeout #{options['timeout']} -message '#{msg}'"
+    elsif (`uname`.chomp == 'Linux')
+        notify_cmd='notify-send #{msg}'
+    end
+    system("#{notify_cmd}")
+end # do_notify
+
+require 'falkorlib/tasks/git'
+# require 'falkorlib/tasks/puppet'
+
+########################
+#  Bootstrapping Tasks #
+########################
+namespace :bootstrap do
+    ###########  bootstrap:modules   ###########
+    desc "Initialize or update puppet modules according to the Puppetfile"
+    task :modules do |t|
+        info "#{t.comment}"
+        run %{ r10k puppetfile install -v }
+    end
+
+    ###########   cert   ###########
+    desc "Initiate a Puppet certificate on the master for HOST #{ENV['HOST']}"
+    task :cert do |t|
+        info "#{t.comment}"
+        error("Use the HOST environment variable to set the target server for run puppet apply") unless ENV['HOST']
+        h = ENV['HOST']
+        m = ENV['MASTER'] ? ENV['MASTER'] : 'hpc-puppetmaster.uni.lux'
+        run %{ ssh #{h} -- sudo /opt/puppetlabs/bin/puppet agent --verbose --test --waitforcert 60 }
+    end # task cert
+
+    # ###########   deps   ###########
+    # desc "Check Puppetfile modules dependencies"
+    # task :deps do |t|
+    #   info "#{t.comment} in #{DEPS_TMPDIR}"
+    #   run %{ mkdir #{DEPS_TMPDIR} } unless Dir.exists?( DEPS_TMPDIR )
+    #   run %{ ln -s ../modules #{DEPS_TMPDIR}/modules } unless File.exists?( "#{DEPS_TMPDIR}/modules" )
+    #   run %{
+    #      cat Puppetfile| sed "s/,[ \t]*:latest//g" > #{DEPS_TMPDIR}/Puppetfile
+
+    #   }
+    #   Dir.chdir("#{DEPS_TMPDIR}") do
+    #     # run %{bundle exec librarian-puppet install --verbose --no-use-v1-api}
+    #   end
+    # end # task deps
+
+end # namespace bootstrap
+
+###########   docs   ###########
+desc "docs Run mkdocs for this project"
+task :docs do |t|
+    info "#{t.comment}"
+    run %{ mkdocs serve }
+end # task docs
+
+##############
+#  Git Tasks #
+##############
+#.....................
+namespace :git do
+    ###########   up   ###########
+    desc "Pull the latest commit and merge then according to git-flow principles"
+    task :up do |t|
+        info "#{t.comment}"
+        FalkorLib.config.gitflow[:branches].each do |t,br|
+            run %{
+         git checkout #{br}
+         git pull origin #{br}
+            }
+        end
+    end # task git:up
+end # namespace git
+
+
+########################
+#  Puppet Puppet Tasks #
+########################
+namespace :puppet do
+    ###########   puppet:bootstrap   ###########
+    desc "Bootstrap puppet on HOST node #{ENV['HOST']}"
+    task :bootstrap do |t|
+        info "#{t.comment}"
+        error("Use the HOST environment variable to set the target server for run puppet apply") unless ENV['HOST']
+        h = ENV['HOST']
+        m = ENV['MASTER'] if ENV['MASTER']
+        # TODO: test command
+        system("ssh #{h} -- uptime")
+        error ("Unable to connect to host '#{h}' ") unless $?.exitstatus == 0
+        c =  run %{ssh #{h} -- ping -c 1 #{m}}
+        error ("Unable to connect to puppet master '#{m}' from host '#{h}'") unless c.to_i == 0
+        info "transfer puppet installation script to #{h}"
+        c = run %{ rsync -avzu #{TOP_SRCDIR}/bin/puppet_install.sh #{h}:/tmp/ }
+        error ("Unable to transfer installation script to host '#{h}'") unless c.to_i == 0
+        cmd = "sudo /tmp/puppet_install.sh --server #{m}"
+        cmd += " --certname #{ENV['CERTNAME']}"     if ENV['CERTNAME']
+        cmd += " --dns-alt-name #{ENV['HOST']}"
+        cmd += ",#{ENV['ALTNAMES']}" if ENV['ALTNAMES']
+        warning "About to install puppet agent targetting master #{m} using\n\t#{cmd}"
+        really_continue?
+        run %{ clush -w #{h} -- #{cmd} }
+    end # task puppet:bootstrap
+
+    # #.....................
+    # namespace :apply do
+    #   ###########   puppet:apply:$(whoami)   ###########
+    #   desc "Run puppet apply using the current local repository status rsync"
+    #   #task ENV['USER'].to_sym => ['r10k:local'] do |t|
+    #   task ENV['USER'].to_sym => ['r10k:local'] do |t|
+    #     info "#{t.comment}"
+    #     error("Use the HOST environment variable to set the target server for run puppet apply") unless ENV['HOST']
+    #     h = ENV['HOST']
+    #     puts h
+    #     run %{ ssh #{h} -- /etc/puppetlabs/code/environments/#{ENV['USER']}/bin/papply --environment #{ENV['USER']} --noop}
+    #     really_continue? "About to run WITHOUT the '--noop' option"
+    #     run %{ ssh #{h} -- /etc/puppetlabs/code/environments/#{ENV['USER']}/bin/papply --environment #{ENV['USER']} }
+    #     run %{ ssh }
+    #   end # task local
+    # end # namespace apply
+
+
+    #.....................
+    namespace :deploy do
+        ['devel', 'production', ENV['USER'] ].each do |br|
+            ###########   puppet:deploy:{devel,production,$(whoami)}   ###########
+            desc "Deploy Puppet for environment '#{br}' on node(s) listed in HOST or CLUSH environement variable"
+            task "#{br.to_sym}" do |t|
+                Rake::Task['r10k:local'].invoke if br == ENV['USER']
+                info "#{t.comment}"
+                error("You should use the HOST or CLUSH environment variable to defined the target server(s) for running puppet agent") unless (ENV['HOST'] or ENV['CLUSH'])
+                clush_opt = "-L -w #{ENV['HOST']}"   if ENV['HOST']
+                clush_opt = "-L -w #{ENV['CLUSH']}"  if ENV['CLUSH']
+                clush_opt = "-L -w #{ENV['GROUP']}"  if ENV['GROUP']
+                cmd = "clush #{clush_opt} -- sudo /opt/puppetlabs/bin/puppet agent -vt --detailed-exitcodes --environment '#{br}'"
+                info "Running in noop mode"
+                really_continue?
+                e = run %{ #{cmd} --noop}
+                error("Runtime error with exit code #{e}") if [1,4,6].include?(e)
+                info "About to run WITHOUT the '--noop' option"
+                really_continue?
+                e = run %{ #{cmd} }
+                error("Runtime errorwith exit code #{e}") unless [0, 2].include?(e)
+                do_notify "Successful run 'puppet agent' for the environment '#{br}' on #{clush_opt.gsub(/-w /,'')}"
+            end # task puppet:deploy:{devel,production,$(whoami)}
+        end
+
+    end # namespace puppet:deploy
+end # namespace puppet
+
+#######################
+#      eYaml tasks    #
+#######################
+#.....................
+namespace :eyaml do
+    ###########   debloy   ###########
+    desc "Deploy the eYAML keys on the Puppet masters"
+    task :deploy do |t|
+        info "#{t.comment}"
+        eyamldir   = '/etc/puppetlabs/puppet/eyaml'
+        keydir     = "#{eyamldir}/keys"
+        clush_opt  = "-w #{PUPPET_MASTER_CLUSH_GROUP}"
+        prsync_opt = "-H \"#{PUPPET_MASTER_HOSTLIST}\""
+        clush_opt  = "-m #{ENV['HOST']}" if ENV['HOST']
+        prsync_opt = "-h #{ENV['HOST']}" if ENV['HOST']
+        run %{ clush #{clush_opt} -- "if [ ! -d '#{keydir}' ]; then sudo mkdir -p #{keydir}; fi" }
+        #run %{ git-crypt unlock }
+        run %{ #{prsync_cmd} -avr #{prsync_opt} #{TOP_SRCDIR}/keys/ /var/lib/localadmin/ }
+        run %{ clush #{clush_opt} -- "sudo mv ~localadmin/*_key.pkcs7.pem #{keydir} && sudo chown -R puppet:puppet #{keydir} &&  sudo chmod 0400 #{keydir}/* && sudo chmod 0500 #{eyamldir}"}
+    end # task debloy
+
+end # namespace eyaml
+
+
+#######################
+#      R10K tasks     #
+#######################
+namespace :r10k do
+    namespace :deploy do
+        local_branches = FalkorLib::Git.list_branch.select{|e| e !~ /remotes\//}
+
+        ###########   r10k:deploy:all   ###########
+        desc "Deploy all environment using R10k on the puppet master(s)"
+        task :all do |t|
+            info "#{t.comment}"
+            run %{ clush -w #{PUPPET_MASTER_CLUSH_GROUP} -- sudo r10k deploy environment -vt }
+            run %{ clush -w #{PUPPET_MASTER_CLUSH_GROUP} -- "sudo puppet generate types --environment production >/dev/null 2>&1" }
+        end # task r10k:deploy:all
+
+        local_branches.each do |br|
+            ###########   r10k:deploy:{devel,production,...}   ###########
+            desc "Deploy the '#{br}' environment using R10k on the puppet master(s)"
+            task "#{br.to_sym}" do |t|
+                info "#{t.comment}"
+                run %{ clush -w #{PUPPET_MASTER_CLUSH_GROUP} -- sudo r10k deploy environment #{br} -vt }
+                run %{ clush -w #{PUPPET_MASTER_CLUSH_GROUP} -- "sudo puppet generate types --environment #{br} >/dev/null 2>&1" }
+            end # task name
+        end
+
+        #.....................
+        namespace :modules do
+            ###########    r10k:deploy:modules:all   ###########
+            desc "Update all environments and theirs respective modules "
+            task :all do |t|
+                info "#{t.comment}"
+                run %{ clush -w #{PUPPET_MASTER_CLUSH_GROUP} -- sudo r10k deploy environment --modules -vt }
+            end # task all
+            local_branches.each do |br|
+                ###########   r10k:deploy::modules:{devel,production,...}   ###########
+                desc "Deploy the '#{br}' environment using R10k on the puppet master(s)"
+                task "#{br.to_sym}" do |t|
+                    info "#{t.comment}"
+                    run %{ clush -w #{PUPPET_MASTER_CLUSH_GROUP} -- sudo r10k deploy environment #{br} --modules -vt }
+                end # task name
+            end
+        end # namespace r10k:deploy:modules
+    end # namespace r10k:deploy
+
+    ###########  r10k:local  ###########
+    desc "local Deploy the special environment '#{ENV['USER']}' using rsync for quick checks"
+    task :local do |t|
+        info "#{t.comment}"
+        envdir = '/etc/puppetlabs/code/environments/' + ENV['USER']
+        clush_group = ENV['CLUSH'] ? ENV['CLUSH'] : "#{PUPPET_MASTER_CLUSH_GROUP}"
+        hostfile  = ENV['CLUSH'] ? `nodeset -e #{ENV['CLUSH']}`.chomp : "#{PUPPET_MASTER_HOSTLIST}"
+        run %{ clush -w #{clush_group} -- "if [ ! -d '#{envdir}' ]; then sudo mkdir #{envdir}; sudo chown localadmin: #{envdir}; fi" }
+        run %{ #{prsync_cmd} -x "--exclude=.git/*" -avr -H "#{hostfile}" #{TOP_SRCDIR}/ #{envdir} }
+        run %{ clush -w #{clush_group} -- "sudo puppet generate types --environment #{ENV['USER']} >/dev/null 2>&1" }
+        do_notify "Successful deployment of the local environement '#{ENV['USER']}'"
+    end # task r10k:local
+
+    #.....................
+    namespace :update do
+        ###########   r10k:update:module   ###########
+        desc "Update certain module across all environments"
+        task :module do |t|
+            info "#{t.comment}"
+            list = ask("Enter the module(s) you wish to update across all environements")
+            Dir.chdir(File.join(TOP_SRCDIR, 'modules'))
+            current_list = Dir.glob('*').select { |e| File.directory?(e) }
+            # check that the list exist
+            list.split.each do |m|
+                error("The puppet module #{m} does not exist") unless current_list.include?(m)
+            end
+            run %{ clush -w #{PUPPET_MASTER_CLUSH_GROUP} -- sudo r10k deploy module #{list} -vt }
+        end # task r10k:update:module
+
+    end # namespace r10k:update
+
+end # namespace r10k
+
+
+###########   setup   ###########
+namespace :setup do
+    #.....................
+    namespace :git do
+        ###########   setup:git:hooks   ###########
+        desc "Initialize the local git hooks"
+        task :hooks do |t|
+            info "#{t.comment}"
+            src_hookdir = File.join(TOP_SRCDIR, 'config', 'hooks')
+            dst_hookdir = File.join(TOP_SRCDIR, '.git',   'hooks')
+            [ 'pre-commit' ].each do |hook|
+                src_hook = File.join(src_hookdir, 'pre-commit.git-crypt', 'pre-commit.git-crypt.sh')
+                dst_hook = File.join(dst_hookdir, "#{hook}")
+                relative_path_to_src_hook = Pathname.new(src_hook).relative_path_from(Pathname.new(dst_hookdir)).to_s
+                run %{ ln -s #{relative_path_to_src_hook} #{dst_hook} } unless File.exists?( dst_hook )
+            end
+        end # task hooks
+    end # namespace git
+end # namespace setup
+
+
+# complete the default setup task
+task :setup => [ 'setup:git:hooks', 'bootstrap:modules' ]
+
+Rake::Task['version:release'].enhance do
+  Rake::Task["r10k:deploy:all"].invoke
+  run %{ clush -w #{PUPPET_MASTER_CLUSH_GROUP} -- "sudo git --git-dir=/etc/puppetlabs/code/environments/production/.git fetch --tags" }
+  run %{ clush -w #{PUPPET_MASTER_CLUSH_GROUP} -- "sudo git --git-dir=/etc/puppetlabs/code/environments/devel/.git      fetch --tags" }
+end
+
+############################ modules ############################
+desc "Update the Puppet modules defined in PuppetFile using r10K"
+task :modules => [ 'bootstrap:modules' ]
