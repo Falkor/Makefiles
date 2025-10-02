@@ -1,10 +1,9 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2024-01-05 23:55 svarrette>
+# Time-stamp: <Fri 2025-09-26 17:43 svarrette>
 ##################################################################################
-# Fetch and check ISOs for various Linux OS in the current directory
 #
-# Copyright (c) 2023-2024 Sebastien Varrette
+# Copyright (c) 2023-2025 Sebastien Varrette
 #
 # Available Commands
 # ------------------
@@ -21,21 +20,36 @@ $(foreach exec,$(EXECUTABLES),\
 	$(if $(shell command -v $(exec) 2>/dev/null),,$(error "$(exec) not available in PATH	")))
 
 ### OS ISOs characteristics to download and check
-DEBIAN_VERSION = 12.4.0
+DEBIAN_VERSION = 13.1.0
 DEBIAN_ARCH    = amd64
 DEBIAN_MIRROR  = 'https://cdimage.debian.org/debian-cd/current/$(DEBIAN_ARCH)/iso-cd/'
 DEBIAN_ISO_URL = '$(DEBIAN_MIRROR)/debian-$(DEBIAN_VERSION)-$(DEBIAN_ARCH)-netinst.iso'
 DEBIAN_CHECKSUMS      = '$(DEBIAN_MIRROR)/SHA256SUMS'
 DEBIAN_CHECKSUMS_SIGN = '$(DEBIAN_MIRROR)/SHA256SUMS.sign'
 
-UBUNTU_VERSION = 22.04.3
+UBUNTU_VERSION = 22.04.5
 UBUNTU_ARCH    = $(DEBIAN_ARCH)
-UBUNTU_MIRROR  = 'https://www-ftp.lip6.fr/pub/linux/distributions/Ubuntu/releases/$(UBUNTU_VERSION)'
+UBUNTU_MIRROR  = 'https://mirror.ibakerserver.pt/Ubuntu/$(UBUNTU_VERSION)'
 UBUNTU_ISO_URL = '$(UBUNTU_MIRROR)/ubuntu-$(UBUNTU_VERSION)-desktop-$(UBUNTU_ARCH).iso'
 UBUNTU_CHECKSUMS      = '$(UBUNTU_MIRROR)/SHA256SUMS'
 UBUNTU_CHECKSUMS_SIGN = '$(UBUNTU_MIRROR)/SHA256SUMS.gpg'
 
-ROCKYLINUX_VERSION	= 8.9
+MINT_VERSION = 21.3
+MINT_MIRROR	 = 'https://mirrors.univ-reims.fr/IMAGES/mint/stable/$(MINT_VERSION)'
+MINT_ISO_URL = '$(MINT_MIRROR)/linuxmint-$(MINT_VERSION)-cinnamon-64bit.iso'
+MINT_CHECKSUMS			= '$(MINT_MIRROR)/sha256sum.txt'
+MINT_CHECKSUMS_SIGN = '$(MINT_MIRROR)/sha256sum.txt.gpg'
+
+# RHEL_VERSION	= 9.4
+# RHEL_ISO_TYPE	= dvd
+# RHEL_ARCH		  = x86_64
+# RHEL_MIRROR	  = 'https://developers.redhat.com/content-gateway/file/rhel/'
+# RHEL_ISO_URL  = '$(RHEL_MIRROR)/Red_Hat_Enterprise_Linux_$(RHEL_VERSION)/rhel-$(RHEL_VERSION)-$(RHEL_ARCH)-$(RHEL_ISO_TYPE).iso'
+# RHEL_CHECKSUMS      = '$(RHEL_MIRROR)/CHECKSUM'
+# RHEL_CHECKSUMS_SIGN = '$(RHEL_MIRROR)/CHECKSUM.sig'
+# RHEL_GPG_KEY = 'https://raw.githubusercontent.com/rocky-linux/checksums/main/keys/RPM-GPG-KEY-Rocky-$(ROCKYLINUX_VERSION_MAJOR)'
+
+ROCKYLINUX_VERSION	= 9.5
 ROCKYLINUX_ISO_TYPE	= minimal
 ROCKYLINUX_ARCH		  = x86_64
 ROCKYLINUX_VERSION_MAJOR	= $(shell echo $(ROCKYLINUX_VERSION) | sed "s/^\([0-9]*\).*/\1/")
@@ -45,8 +59,8 @@ ROCKYLINUX_CHECKSUMS      = '$(ROCKYLINUX_MIRROR)/CHECKSUM'
 ROCKYLINUX_CHECKSUMS_SIGN = '$(ROCKYLINUX_MIRROR)/CHECKSUM.sig'
 ROCKYLINUX_GPG_KEY = 'https://raw.githubusercontent.com/rocky-linux/checksums/main/keys/RPM-GPG-KEY-Rocky-$(ROCKYLINUX_VERSION_MAJOR)'
 
-ALMALINUX_VERSION		= 9.3
-ALMALINUX_ISO_TYPE	= minimal
+ALMALINUX_VERSION		= $(ROCKYLINUX_VERSION)
+ALMALINUX_ISO_TYPE	= $(ROCKYLINUX_ISO_TYPE)
 ALMALINUX_ARCH			= $(ROCKYLINUX_ARCH)
 ALMALINUX_MIRROR		= 'https://repo.almalinux.org/almalinux/$(ALMALINUX_VERSION)/isos/$(ALMALINUX_ARCH)'
 ALMALINUX_ISO_URL		= '$(ALMALINUX_MIRROR)/AlmaLinux-$(ALMALINUX_VERSION)-$(ALMALINUX_ARCH)-$(ALMALINUX_ISO_TYPE).iso'
@@ -54,7 +68,6 @@ ALMALINUX_CHECKSUMS = '$(ALMALINUX_MIRROR)/CHECKSUM'
 ALMALINUX_CHECKSUMS_SIGN = '$(ALMALINUX_CHECKSUMS)'
 ALMALINUX_VERSION_MAJOR	= $(shell echo $(ALMALINUX_VERSION) | sed "s/^\([0-9]*\).*/\1/")
 ALMALINUX_GPG_KEY   = 'https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux-$(ALMALINUX_VERSION_MAJOR)'
-
 
 ARCHLINUX_VERSION = latest
 ARCHLINUX_ARCH    = x86_64
@@ -180,8 +193,8 @@ all: $(TARGETS)
 clean: $(CLEAN_TARGETS)
 distclean: $(DISTCLEAN_TARGETS)
 
-fetch: fetch-debian-iso fetch-ubuntu-iso fetch-rockylinux-iso fetch-archlinux-iso fetch-pfsense-iso
-check: check-debian-iso check-ubuntu-iso check-rockylinux-iso check-archlinux-iso check-pfsense-iso
+fetch: fetch-debian-iso fetch-ubuntu-iso fetch-rockylinux-iso fetch-archlinux-iso fetch-pfsense-iso fetch-mint-iso
+check: check-debian-iso check-ubuntu-iso check-rockylinux-iso check-archlinux-iso check-pfsense-iso check-mint-iso
 
 .PHONY: info list
 info:
@@ -197,6 +210,7 @@ list:
 	@echo "----------- ---------- -------- ------ ---------"
 	@printf "%10s: %10s %8s %6s %s\n" "debian"     "Debian"     $(DEBIAN_VERSION) $(DEBIAN_ARCH) $(DEBIAN_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"ubuntu"     "Ubuntu"     $(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_ISO_URL)
+	@printf "%10s: %10s %8s %6s %s\n"	"mint"   "Linux Mint"     $(MINT_VERSION)   $(MINT_ARCH)   $(MINT_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"rockylinux" "RockyLinux" $(ROCKYLINUX_VERSION) $(ROCKYLINUX_ARCH) $(ROCKYLINUX_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"archlinux"  "ArchLinux"  $(ARCHLINUX_VERSION) $(ARCHLINUX_ARCH) $(ARCHLINUX_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"pfsense"    "pfSense"    $(PFSENSE_VERSION) $(PFSENSE_ARCH) $(PFSENSE_ISO_URL)
@@ -211,7 +225,7 @@ list:
 	@echo " In particular, if you don't end with a symlink <os>.iso, don't waste time to prepare a USB stick of use the present ISO"
 	@echo " the downloaded file is probably corrupted."
 
-clean-checksums:  clean-debian-checksums  clean-ubuntu-checksums clean-rocky-linux-checksums clean-archlinux-checksums clean-pfsense-checksums
+clean-checksums:  clean-debian-checksums  clean-ubuntu-checksums clean-mint-checksums clean-rocky-linux-checksums clean-archlinux-checksums clean-pfsense-checksums
 
 ##########  Debian ###########
 debian: fetch-debian-iso check-debian-iso
@@ -264,6 +278,29 @@ clean-ubuntu-checksums:  __clean-iso-ubuntu-checksum __clean-iso-ubuntu-sign
 clean-ubuntu: clean-ubuntu-checksums __clean-iso-ubuntu
 	-rm -f $(ISO_DIR)/ubuntu.iso
 
+########## Linux Mint ###########
+mint: fetch-mint check-mint-iso
+
+fetch-mint: fetch-mint-iso fetch-mint-iso-checksum fetch-mint-gpg-keys
+fetch-mint-iso: __fetch-iso-mint
+fetch-mint-iso-checksum: __fetch-iso-mint-checksum  __fetch-iso-mint-checksum-sign
+
+$(eval $(call __FETCH,iso-mint,$(ISO_DIR),$(MINT_ISO_URL)))
+$(eval $(call __FETCH,iso-mint-checksum,$(ISO_DIR),$(MINT_CHECKSUMS)))
+$(eval $(call __FETCH,iso-mint-checksum-sign,$(ISO_DIR),$(MINT_CHECKSUMS_SIGN)))
+
+fetch-mint-gpg-keys:
+	@echo "=> collect the Mint GPG keys listed on https://linuxmint-installation-guide.readthedocs.io/en/latest/verify.html"
+	gpg --keyid-format long --keyserver keyserver.ubuntu.com --recv-keys 27DEB15644C6B3CF3BD7D291300F846BA25BAE09
+
+check-mint-iso: fetch-mint __gpg_verify_detached_sign-iso-mint-checksum __check-iso-mint clean-mint-checksums
+$(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-mint-checksum,$(ISO_DIR),$(MINT_CHECKSUMS),$(MINT_CHECKSUMS_SIGN)))
+$(eval $(call __VERIFY_ISO_CHECKSUM,mint,$(ISO_DIR),$(MINT_ISO_URL),$(MINT_CHECKSUMS)))
+
+clean-mint-checksums:  __clean-iso-mint-checksum __clean-iso-mint-checksum-sign
+clean-mint: clean-mint-checksums __clean-iso-mint
+	-rm -f $(ISO_DIR)/mint.iso
+
 
 ########## Rocky Linux ###########
 rockylinux: fetch-rockylinux-iso check-rockylinux-iso
@@ -285,7 +322,13 @@ fetch-rockylinux-gpg-keys: __fetch-rockylinux-gpg-key
 
 check-rockylinux-iso: fetch-rockylinux fetch-rockylinux-gpg-keys __gpg_verify_detached_sign-iso-rockylinux-checksum __check-iso-rockylinux clean-rockylinux-checksums
 
-$(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-rockylinux-checksum,$(ISO_DIR),$(ALMALINUX_CHECKSUMS),$(ROCKYLINUX_CHECKSUMS_SIGN)))
+ifeq ($(shell expr $(ROCKYLINUX_VERSION_MAJOR) \>= 9), 1)
+__gpg_verify_detached_sign-iso-rockylinux-checksum:
+	@echo "=> Unfortunately on RockyLinux >= $(ROCKYLINUX_VERSION_MAJOR), no $(shell basename $(ROCKYLINUX_CHECKSUMS_SIGN)) available thus ignoring the verification"
+else
+$(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-rockylinux-checksum,$(ISO_DIR),$(ROCKYLINUX_CHECKSUMS),$(ROCKYLINUX_CHECKSUMS_SIGN)))
+endif
+
 $(eval $(call __VERIFY_ISO_CHECKSUM,rockylinux,$(ISO_DIR),$(ROCKYLINUX_ISO_URL),$(ROCKYLINUX_CHECKSUMS)))
 
 clean-rockylinux-checksums: __clean-iso-rockylinux-checksum __clean-iso-rockylinux-checksum-sign
