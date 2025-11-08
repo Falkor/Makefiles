@@ -57,7 +57,7 @@ up update:
 
 
 ### Git submodules
-.PHONY: setup-git-submodule git-submodule-update
+.PHONY: setup-git-submodule git-submodule-update git-submodule-upgrade
 setup-git-submodule:
 	@if [ -f '.gitmodules' ]; then \
 		$(MAKE) git-submodule-update; \
@@ -67,6 +67,13 @@ git-submodule-update:
 	@echo "=> initializing and updating (NOT upgrading) git submodule"
 	git submodule init
 	git submodule update
+
+git-submodule-upgrade: git-submodule-update
+	@echo "=> Upgrading **ALL** git submodule to the latest version"
+	git submodule foreach 'git fetch origin; git switch $$(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
+	-@for submoddir in $(shell git submodule status | awk '{ print $$2 }' | xargs echo); do \
+		git commit -s -m "Upgrading Git submodule '$$submoddir' to the latest version" $$submoddir || true; \
+	done
 
 # Gnu Make Macro to centralize bump management
 # Usage: $(eval $(call __VERSION_BUMP,<name>,<version>))
