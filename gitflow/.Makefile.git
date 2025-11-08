@@ -80,7 +80,7 @@ __start-version-bump-$1:
 	git flow release start $2
 	@sleep 1
 	echo $2 > VERSION
-	git commit -s -m "$1 bump to version $2"
+	git commit -s -m "$1 bump to version $2" VERSION
 	@echo "=> run 'make release' once you finished the version bump"
 endef
 
