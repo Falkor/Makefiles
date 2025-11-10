@@ -24,8 +24,8 @@ doc-build: clean-doc
 	mkdocs build -d $(MKDOCS_BUILD_DIR)
 
 doc-get-deps:
-  @echo "Show required PyPI packages inferred from plugins in mkdocs.yml"
-  mkdocs get-deps -v
+	@echo "Show required PyPI packages inferred from plugins in mkdocs.yml"
+	mkdocs get-deps -v
 
 clean-doc:
 	-rm -rf public # $(MKDOCS_BUILD_DIR)
