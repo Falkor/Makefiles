@@ -1,0 +1,31 @@
+# -*- mode: makefile -*-
+#################################################################################
+# Insert 'include .Makefile.mkdocs' in your main Makefile to enable these rules.
+#
+# Manage an Mkdocs[-material] website
+#
+# Typical setup in a python virtualenv
+#   python3 -m venv venv
+#   source venv/bin/activate
+#   pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin mkdocs-git-revision-date-localized-plugin \
+#               markdown-include mkdocs-include-markdown-plugin mdx-truly-sane-lists
+#   pip freeze -l | tee requirements.txt
+#
+# Combine with .Makefile.venv to handle setup with 'make setup-python'
+#
+MKDOCS_BUILD_DIR = public
+
+.PHONY: doc doc-build doc-get-deps clean-doc
+doc:
+	mkdocs serve --livereload
+
+doc-build: clean-doc
+	@echo "=> building the mkdocs website into $(MKDOCS_BUILD_DIR)/"
+	mkdocs build -d $(MKDOCS_BUILD_DIR)
+
+doc-get-deps:
+  @echo "Show required PyPI packages inferred from plugins in mkdocs.yml"
+  mkdocs get-deps -v
+
+clean-doc:
+	-rm -rf public # $(MKDOCS_BUILD_DIR)
