@@ -11,6 +11,7 @@
 #
 ####################################################################################
 # Generic Makefile to pilot a git[-flow] repository action
+# Better consider the alternative proposed in the template/Makefile
 ############################## Variables Declarations ##############################
 SHELL = /bin/bash
 
