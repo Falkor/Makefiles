@@ -1,4 +1,4 @@
-# Time-stamp: <Mon 2025-11-10 23:40 svarrette>
+# Time-stamp: <Tue 2025-11-11 22:00 svarrette>
 ####################################################################################
 # Makefile (configuration file for GNU make - see http://www.gnu.org/software/make/)
 #                     __  __       _         __ _ _
@@ -105,7 +105,8 @@ endif
 #######################################
 ifneq ("$(wildcard .Makefile.git)","")
 include .Makefile.git
-INFO_TARGETS += info-git info-version
+SETUP_TARGETS += setup-gitflow setup-git-submodule
+INFO_TARGETS  += info-git info-version
 endif
 
 #########################
