@@ -1,6 +1,6 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Sat 2025-12-20 16:38 svarrette>
+# Time-stamp: <Sat 2025-12-20 16:45 svarrette>
 ##################################################################################
 #
 # Copyright (c) 2023-2025 Sebastien Varrette
@@ -8,7 +8,7 @@
 #      https://github.com/Falkor/Makefiles/tree/devel/ISOs
 #
 # Consider https://github.com/Mexit/MultiOS-USB to easily create a minimal
-# bootable USB stick feature all your downloaded ISOs!
+# bootable USB stick featuring all your downloaded ISOs (under MultiOS-USB/ISOs/)
 #    git clone https://github.com/Mexit/MultiOS-USB.git
 #    cd MultiOS-USB
 #    ./multios-usb.sh -l # Detect USB devices
@@ -43,9 +43,9 @@ DEBIAN_ISO_URL = '$(DEBIAN_MIRROR)/debian-$(DEBIAN_VERSION)-$(DEBIAN_ARCH)-netin
 DEBIAN_CHECKSUMS      = '$(DEBIAN_MIRROR)/SHA256SUMS'
 DEBIAN_CHECKSUMS_SIGN = '$(DEBIAN_MIRROR)/SHA256SUMS.sign'
 
-UBUNTU_VERSION = 22.04.5
+UBUNTU_VERSION = 24.04.3
 UBUNTU_ARCH    = $(DEBIAN_ARCH)
-UBUNTU_MIRROR  = 'https://mirror.ibakerserver.pt/Ubuntu/$(UBUNTU_VERSION)'
+UBUNTU_MIRROR  = 'https://ubuntu.mirrors.ovh.net/ubuntu-releases/$(UBUNTU_VERSION)'
 UBUNTU_ISO_URL = '$(UBUNTU_MIRROR)/ubuntu-$(UBUNTU_VERSION)-desktop-$(UBUNTU_ARCH).iso'
 UBUNTU_CHECKSUMS      = '$(UBUNTU_MIRROR)/SHA256SUMS'
 UBUNTU_CHECKSUMS_SIGN = '$(UBUNTU_MIRROR)/SHA256SUMS.gpg'
