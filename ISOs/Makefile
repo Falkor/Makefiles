@@ -1,10 +1,12 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2025-09-26 17:43 svarrette>
+# Time-stamp: <Sat 2025-12-20 10:55 svarrette>
 ##################################################################################
 #
 # Copyright (c) 2023-2025 Sebastien Varrette
-#
+# Latest version of this Makefile: see
+#      https://github.com/Falkor/Makefiles/tree/devel/ISOs
+
 # Available Commands
 # ------------------
 # make           List supported OS
@@ -20,7 +22,7 @@ $(foreach exec,$(EXECUTABLES),\
 	$(if $(shell command -v $(exec) 2>/dev/null),,$(error "$(exec) not available in PATH	")))
 
 ### OS ISOs characteristics to download and check
-DEBIAN_VERSION = 13.1.0
+DEBIAN_VERSION = 13.2.0
 DEBIAN_ARCH    = amd64
 DEBIAN_MIRROR  = 'https://cdimage.debian.org/debian-cd/current/$(DEBIAN_ARCH)/iso-cd/'
 DEBIAN_ISO_URL = '$(DEBIAN_MIRROR)/debian-$(DEBIAN_VERSION)-$(DEBIAN_ARCH)-netinst.iso'
