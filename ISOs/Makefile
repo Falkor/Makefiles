@@ -1,6 +1,6 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Sat 2025-12-20 15:16 svarrette>
+# Time-stamp: <Sat 2025-12-20 16:38 svarrette>
 ##################################################################################
 #
 # Copyright (c) 2023-2025 Sebastien Varrette
@@ -58,7 +58,15 @@ FEDORA_ISO_URL = '$(FEDORA_MIRROR)/Fedora-Workstation-Live-$(FEDORA_VERSION).$(F
 FEDORA_CHECKSUMS  		= '$(FEDORA_MIRROR)/Fedora-Workstation-$(FEDORA_VERSION)-$(FEDORA_ARCH)-CHECKSUM'
 FEDORA_CHECKSUMS_SIGN = '$(FEDORA_CHECKSUMS)'
 
-MINT_VERSION = 21.3
+FEDORA_SILVERBLUE_VERSION = $(FEDORA_VERSION)
+FEDORA_SILVERBLUE_VERSION_MAJOR	= $(shell echo $(FEDORA_SILVERBLUE_VERSION) | sed "s/^\([0-9]*\)-[0-9\.]*/\1/")
+FEDORA_SILVERBLUE_ARCH    = $(FEDORA_ARCH)
+FEDORA_SILVERBLUE_MIRROR  = 'https://download.fedoraproject.org/pub/fedora/linux/releases/$(FEDORA_SILVERBLUE_VERSION_MAJOR)/Silverblue/$(FEDORA_SILVERBLUE_ARCH)/iso'
+FEDORA_SILVERBLUE_ISO_URL = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-ostree-$(FEDORA_SILVERBLUE_ARCH)-$(FEDORA_SILVERBLUE_VERSION).iso'
+# Just why reverse version <-> arch ????
+FEDORA_SILVERBLUE_CHECKSUMS      = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-$(FEDORA_SILVERBLUE_VERSION)-$(FEDORA_SILVERBLUE_ARCH)-CHECKSUM'
+
+MINT_VERSION = 22.2
 MINT_MIRROR  = 'https://mirrors.univ-reims.fr/IMAGES/mint/stable/$(MINT_VERSION)'
 MINT_ISO_URL = '$(MINT_MIRROR)/linuxmint-$(MINT_VERSION)-cinnamon-64bit.iso'
 MINT_CHECKSUMS			= '$(MINT_MIRROR)/sha256sum.txt'
@@ -235,6 +243,7 @@ list:
 	@printf "%10s: %10s %8s %6s %s\n" "debian"     "Debian"     $(DEBIAN_VERSION) $(DEBIAN_ARCH) $(DEBIAN_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"ubuntu"     "Ubuntu"     $(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"fedora"     "Fedora"     $(FEDORA_VERSION) $(FEDORA_ARCH) $(FEDORA_ISO_URL)
+	@printf "%10s: %10s %8s %6s %s\n"	"silverblue" "Fedora *"     $(FEDORA_SILVERBLUE_VERSION) $(FEDORA_SILVERBLUE_ARCH) $(FEDORA_SILVERBLUE_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"mint"   "Linux Mint"     $(MINT_VERSION)   $(MINT_ARCH)   $(MINT_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"rockylinux" "RockyLinux" $(ROCKYLINUX_VERSION) $(ROCKYLINUX_ARCH) $(ROCKYLINUX_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"archlinux"  "ArchLinux"  $(ARCHLINUX_VERSION) $(ARCHLINUX_ARCH) $(ARCHLINUX_ISO_URL)
@@ -329,7 +338,29 @@ clean-fedora-checksums:  __clean-iso-fedora-checksum
 clean-fedora: clean-fedora-checksums __clean-iso-fedora
 	-rm -f $(ISO_DIR)/fedora.iso
 
+########## Fedora Silverblue ###########
+fedora-silverblue silverblue: fetch-fedora-silverblue check-fedora-silverblue-iso
 
+fetch-silverblue fetch-fedora-silverblue: fetch-fedora-silverblue-iso fetch-fedora-silverblue-iso-checksum fetch-fedora-gpg-keys
+	if [ -f "$(ISO_DIR)/Fedora-Silverblue-ostree-$(FEDORA_SILVERBLUE_ARCH)-$(FEDORA_SILVERBLUE_VERSION).iso" ]; then \
+		echo "Bugfix silverblue ISO filename (swap arch and version)"; \
+		if [ ! -h "Fedora-Silverblue-ostree-$(FEDORA_SILVERBLUE_VERSION)-$(FEDORA_SILVERBLUE_ARCH).iso" ]; then \
+			ln -s $(ISO_DIR)/Fedora-Silverblue-ostree-$(FEDORA_SILVERBLUE_ARCH)-$(FEDORA_SILVERBLUE_VERSION).iso Fedora-Silverblue-ostree-$(FEDORA_SILVERBLUE_VERSION)-$(FEDORA_SILVERBLUE_ARCH).iso; \
+		fi ; \
+	fi
+fetch-silverblue-iso fetch-fedora-silverblue-iso: __fetch-iso-fedora-silverblue
+fetch-silverblue-iso-checksum fetch-fedora-silverblue-iso-checksum: __fetch-iso-fedora-silverblue-checksum
+
+$(eval $(call __FETCH,iso-fedora-silverblue,$(ISO_DIR),$(FEDORA_SILVERBLUE_ISO_URL)))
+$(eval $(call __FETCH,iso-fedora-silverblue-checksum,$(ISO_DIR),$(FEDORA_SILVERBLUE_CHECKSUMS)))
+
+check-silverblue-iso check-fedora-silverblue-iso: fetch-fedora-silverblue fetch-fedora-gpg-keys __gpg_verify_sign-iso-fedora-silverblue-checksum __check-iso-fedora-silverblue clean-fedora-silverblue-checksums
+$(eval $(call __GPG_VERIFY_SIGN,iso-fedora-silverblue-checksum,$(ISO_DIR),$(FEDORA_SILVERBLUE_CHECKSUMS)))
+$(eval $(call __VERIFY_ISO_CHECKSUM,fedora-silverblue,$(ISO_DIR),$(FEDORA_SILVERBLUE_ISO_URL),$(FEDORA_SILVERBLUE_CHECKSUMS)))
+
+clean-silverblue-checksums clean-fedora-silverblue-checksums:  __clean-iso-fedora-silverblue-checksum
+clean-silverblue clean-fedora-silverblue: clean-fedora-silverblue-checksums __clean-iso-fedora-silverblue
+	-rm -f $(ISO_DIR)/fedora-silverblue.iso
 
 
 ########## Linux Mint ###########
