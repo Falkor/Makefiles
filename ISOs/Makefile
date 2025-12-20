@@ -1,11 +1,25 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Sat 2025-12-20 10:55 svarrette>
+# Time-stamp: <Sat 2025-12-20 15:16 svarrette>
 ##################################################################################
 #
 # Copyright (c) 2023-2025 Sebastien Varrette
 # Latest version of this Makefile: see
 #      https://github.com/Falkor/Makefiles/tree/devel/ISOs
+#
+# Consider https://github.com/Mexit/MultiOS-USB to easily create a minimal
+# bootable USB stick feature all your downloaded ISOs!
+#    git clone https://github.com/Mexit/MultiOS-USB.git
+#    cd MultiOS-USB
+#    ./multios-usb.sh -l # Detect USB devices
+#    sudo ./multios-usb.sh -f ext4 /dev/sdX   # install MultiOS-USB, /!\ ADAPT device sbX
+#    # mount the MultiOS-USB partition
+#    sudo cp <linux-distrib>.iso /path/to/MultiOS-USB/ISOs/
+#    sync
+#    # You may need to update the debian profile to support netinst
+#    # see MultiOS-USB/config/debian* (check iso)
+#    sudo umount /mnt/multiOS-USB
+#
 
 # Available Commands
 # ------------------
@@ -36,8 +50,16 @@ UBUNTU_ISO_URL = '$(UBUNTU_MIRROR)/ubuntu-$(UBUNTU_VERSION)-desktop-$(UBUNTU_ARC
 UBUNTU_CHECKSUMS      = '$(UBUNTU_MIRROR)/SHA256SUMS'
 UBUNTU_CHECKSUMS_SIGN = '$(UBUNTU_MIRROR)/SHA256SUMS.gpg'
 
+FEDORA_VERSION = 43-1.6
+FEDORA_VERSION_MAJOR	= $(shell echo $(FEDORA_VERSION) | sed "s/^\([0-9]*\)-[0-9\.]*/\1/")
+FEDORA_ARCH    = x86_64
+FEDORA_MIRROR  = 'https://download.fedoraproject.org/pub/fedora/linux/releases/$(FEDORA_VERSION_MAJOR)/Workstation/$(FEDORA_ARCH)/iso'
+FEDORA_ISO_URL = '$(FEDORA_MIRROR)/Fedora-Workstation-Live-$(FEDORA_VERSION).$(FEDORA_ARCH).iso'
+FEDORA_CHECKSUMS  		= '$(FEDORA_MIRROR)/Fedora-Workstation-$(FEDORA_VERSION)-$(FEDORA_ARCH)-CHECKSUM'
+FEDORA_CHECKSUMS_SIGN = '$(FEDORA_CHECKSUMS)'
+
 MINT_VERSION = 21.3
-MINT_MIRROR	 = 'https://mirrors.univ-reims.fr/IMAGES/mint/stable/$(MINT_VERSION)'
+MINT_MIRROR  = 'https://mirrors.univ-reims.fr/IMAGES/mint/stable/$(MINT_VERSION)'
 MINT_ISO_URL = '$(MINT_MIRROR)/linuxmint-$(MINT_VERSION)-cinnamon-64bit.iso'
 MINT_CHECKSUMS			= '$(MINT_MIRROR)/sha256sum.txt'
 MINT_CHECKSUMS_SIGN = '$(MINT_MIRROR)/sha256sum.txt.gpg'
@@ -212,6 +234,7 @@ list:
 	@echo "----------- ---------- -------- ------ ---------"
 	@printf "%10s: %10s %8s %6s %s\n" "debian"     "Debian"     $(DEBIAN_VERSION) $(DEBIAN_ARCH) $(DEBIAN_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"ubuntu"     "Ubuntu"     $(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_ISO_URL)
+	@printf "%10s: %10s %8s %6s %s\n"	"fedora"     "Fedora"     $(FEDORA_VERSION) $(FEDORA_ARCH) $(FEDORA_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"mint"   "Linux Mint"     $(MINT_VERSION)   $(MINT_ARCH)   $(MINT_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"rockylinux" "RockyLinux" $(ROCKYLINUX_VERSION) $(ROCKYLINUX_ARCH) $(ROCKYLINUX_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"archlinux"  "ArchLinux"  $(ARCHLINUX_VERSION) $(ARCHLINUX_ARCH) $(ARCHLINUX_ISO_URL)
@@ -279,6 +302,35 @@ $(eval $(call __VERIFY_ISO_CHECKSUM,ubuntu,$(ISO_DIR),$(UBUNTU_ISO_URL),$(UBUNTU
 clean-ubuntu-checksums:  __clean-iso-ubuntu-checksum __clean-iso-ubuntu-sign
 clean-ubuntu: clean-ubuntu-checksums __clean-iso-ubuntu
 	-rm -f $(ISO_DIR)/ubuntu.iso
+
+
+########## Fedora ###########
+fedora: fetch-fedora check-fedora-iso
+
+fetch-fedora: fetch-fedora-iso fetch-fedora-iso-checksum fetch-fedora-gpg-keys
+fetch-fedora-iso: __fetch-iso-fedora
+fetch-fedora-iso-checksum: __fetch-iso-fedora-checksum
+
+$(eval $(call __FETCH,iso-fedora,$(ISO_DIR),$(FEDORA_ISO_URL)))
+$(eval $(call __FETCH,iso-fedora-checksum,$(ISO_DIR),$(FEDORA_CHECKSUMS)))
+
+fetch-fedora-gpg-keys:
+	@echo "=> collect the Fedora GPG keys"
+	curl -O https://fedoraproject.org/fedora.gpg
+	-gpg --import fedora.gpg
+	-rm -f fedora.gpg
+
+check-fedora-iso: fetch-fedora fetch-fedora-gpg-keys __gpg_verify_sign-iso-fedora-checksum __check-iso-fedora clean-fedora-checksums
+$(eval $(call __GPG_VERIFY_SIGN,iso-fedora-checksum,$(ISO_DIR),$(FEDORA_CHECKSUMS)))
+$(eval $(call __VERIFY_ISO_CHECKSUM,fedora,$(ISO_DIR),$(FEDORA_ISO_URL),$(FEDORA_CHECKSUMS)))
+
+
+clean-fedora-checksums:  __clean-iso-fedora-checksum
+clean-fedora: clean-fedora-checksums __clean-iso-fedora
+	-rm -f $(ISO_DIR)/fedora.iso
+
+
+
 
 ########## Linux Mint ###########
 mint: fetch-mint check-mint-iso
