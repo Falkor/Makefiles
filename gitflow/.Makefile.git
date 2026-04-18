@@ -20,12 +20,12 @@ HAS_GITFLOW        = $(shell git flow version 2>/dev/null || [ $$? -eq 0 ])
 
 # Repository versionning management
 VERSION       = $(shell [ -f VERSION ] && head VERSION || echo '0.0.1')
-VERSION_MAJOR = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
-VERSION_MINOR   = $(shell echo $(VERSION) | sed "s/[0-9]*\.\([0-9]*\).*/\1/")
-VERSION_PATCH   = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
-NEXT_MAJOR_VERSION = $(shell expr $(MAJOR) + 1).0.0
-NEXT_MINOR_VERSION = $(VERSION_MAJOR).$(shell expr $(MINOR) + 1).0
-NEXT_PATCH_VERSION = $(VERSION_MAJOR).$(VERSION_MINOR).$(shell expr $(PATCH) + 1)
+VERSION_MAJOR  = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
+VERSION_MINOR  = $(shell echo $(VERSION) | sed "s/[0-9]*\.\([0-9]*\).*/\1/")
+VERSION_PATCH  = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
+NEXT_MAJOR_VERSION = $(shell expr $(VERSION_MAJOR) + 1).0.0
+NEXT_MINOR_VERSION = $(VERSION_MAJOR).$(shell expr $(VERSION_MINOR) + 1).0
+NEXT_PATCH_VERSION = $(VERSION_MAJOR).$(VERSION_MINOR).$(shell expr $(VERSION_PATCH) + 1)
 
 ### git-flow setup
 .PHONY: setup-gitflow
@@ -72,7 +72,7 @@ git-submodule-upgrade: git-submodule-update
 	@echo "=> Upgrading **ALL** git submodule to the latest version"
 	git submodule foreach 'git fetch origin; git switch $$(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx'
 	-@for submoddir in $(shell git submodule status | awk '{ print $$2 }' | xargs echo); do \
-		git commit -s -m "Upgrading Git submodule '$$submoddir' to the latest version" $$submoddir || true; \
+		git commit -s -m "feat(submodules) upgrading '$$submoddir' git submodule to the latest version" $$submoddir || true; \
 	done
 
 # Gnu Make Macro to centralize bump management
