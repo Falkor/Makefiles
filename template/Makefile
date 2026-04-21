@@ -21,6 +21,7 @@
 #
 # **Default action upon 'make'**: see TARGETS
 # Usage:
+#     make help  # display all make directives
 # - Repository management: (from .Makefile.git)
 #     make setup
 #     make up
@@ -60,9 +61,9 @@ XDG_DATA_HOME   ?= $(HOME)/.local/share
 ##################### Main targets #####################
 TARGETS = setup
 SETUP_TARGETS = setup-xdg
+INFO_TARGETS  =
 CLEAN_TARGETS =
 DISTCLEAN_TARGETS = clean-venv
-INFO_TARGETS =
 
 # local hook (before) for 'easy' customization. Ex:
 # SETUP_TARGETS += setup-python
@@ -78,6 +79,12 @@ endif
 ############### Let's go ##############
 .PHONY: all
 all: $(TARGETS)
+
+### general help: list all available make directives
+.PHONY: help
+help:
+	@echo "=> available directives: "
+	@grep -E '^[a-zA-Z_-]+:' $(MAKEFILE_LIST) | grep -v '=' | awk -F: '{print $$2}' | sort | uniq | awk '{printf "\033[36m   make %-30s\033[0m\n", $$1}'
 
 ### Specific setup; XDG, python venv
 .PHONY: setup-xdg
