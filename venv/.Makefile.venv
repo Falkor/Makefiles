@@ -208,6 +208,7 @@ show-venv: venv
 
 .PHONY: info-venv
 info-venv:
+	@echo "============ venv ============="
 	@echo "PATH (Shell)=$$PATH"
 	@$(MAKE) --version
 	$(info PATH (GNU Make)="$(PATH)")
