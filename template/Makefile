@@ -23,8 +23,9 @@
 # Usage:
 #     make help  # display all make directives
 # - Repository management: (from .Makefile.git)
-#     make setup
+#     make setup              see SETUP_TARGETS
 #     make up
+#     make git-submodule-{update,upgrade}
 #     make start-{major,minor,patch}-version-bump
 #     make release
 #
@@ -33,8 +34,9 @@
 #     make clean-venv
 #
 # - Mkdocs management (from .Makefile.mkdocs)
-#     make setup-python
-#     make clean-venv
+#     make doc
+#     make doc-build 
+#     make clean-doc
 #
 # - lint operations
 #     make lint (shellcheck on scripts etc.)
