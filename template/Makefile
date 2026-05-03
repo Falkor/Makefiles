@@ -86,7 +86,7 @@ all: $(TARGETS)
 .PHONY: help
 help:
 	@echo "=> available directives: "
-	@grep -E '^[a-zA-Z_-]+:' $(MAKEFILE_LIST) | grep -v '=' | awk -F: '{print $$2}' | sort | uniq | awk '{printf "\033[36m   make %-30s\033[0m\n", $$1}'
+	@grep -EHn '^[a-z0-9_-]+[^:]*:' $(MAKEFILE_LIST) | grep -v '=' | awk -F: '{print $$3}' | xargs -n1 echo | sort | uniq | awk '{printf "\033[36m   make %-30s\033[0m\n", $$1}'
 
 ### Specific setup; XDG, python venv
 .PHONY: setup-xdg
