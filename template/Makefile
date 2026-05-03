@@ -86,9 +86,10 @@ all: $(TARGETS)
 .PHONY: help
 help:
 	@echo "=> available directives: "
-	@grep -EHn '^[a-z0-9_-]+[^:]*:' $(MAKEFILE_LIST) | grep -v '=' | awk -F: '{print $$3}' | xargs -n1 echo | sort | uniq | awk '{printf "\033[36m   make %-30s\033[0m\n", $$1}'
+	@grep -EHn '^[a-z0-9_-]+[^:$$]*:' $(MAKEFILE_LIST) | grep -v '=' | awk -F: '{print $$3}' | xargs -n1 echo | sort | uniq | awk '{printf "\033[36m   make %-30s\033[0m\n", $$1}'
 
-### Specific setup; XDG, python venv
+### Specific setup: XDG Base Directory Specification
+# https://specifications.freedesktop.org/basedir/latest/
 .PHONY: setup-xdg
 setup-xdg:
 	mkdir -p $(XDG_CONFIG_HOME)
@@ -135,11 +136,12 @@ lint-bash:
 	shellcheck $(shell find $(SCRIPTS_DIR) -type f)
 
 
+############## footer ###############
 .PHONY: setup clean distclean info
 setup: $(SETUP_TARGETS)
+info:  $(INFO_TARGETS)
 clean: $(CLEAN_TARGETS)
 distclean: $(DISTCLEAN_TARGETS)
-info: $(INFO_TARGETS)
 
 # local hook (after) to add complementary rules
 # extending *_TARGETS variables here won't have the expected effect (use .Makefile.local instead)
