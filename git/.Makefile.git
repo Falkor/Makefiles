@@ -2,11 +2,11 @@
 # Insert 'include .Makefile.git' in your main Makefile to enable these rules.
 #
 # This Makefile provides the following targets:
-# make setup-git-submodule
-# make git-submodule-update
-# make start-{major,minor,patch}-version-bump
-# make release
-# make info-{git,version}
+#   make setup-git-submodule
+#   make git-submodule-update
+#   make start-{major,minor,patch}-version-bump
+#   make release
+#   make info-{git,version}
 
 # Git setup
 DEFAULT_BRANCH = $(shell git symbolic-ref refs/remotes/origin/HEAD | cut -f4 -d/)
@@ -14,7 +14,7 @@ GIT_BRANCH_CURRENT = $(shell git rev-parse --abbrev-ref HEAD)
 IS_GIT_REPO_DIRTY  = $(shell git diff --shortstat 2> /dev/null | tail -n1 )
 
 # Repository versionning management
-VERSION       = $(shell [ -f VERSION ] && head VERSION || echo '0.0.0')
+VERSION        = $(shell [ -f VERSION ] && head VERSION || echo '0.0.0')
 VERSION_MAJOR  = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
 VERSION_MINOR  = $(shell echo $(VERSION) | sed "s/[0-9]*\.\([0-9]*\).*/\1/")
 VERSION_PATCH  = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")

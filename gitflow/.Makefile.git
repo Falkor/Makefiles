@@ -3,13 +3,13 @@
 # /!\ IMPORTANT: adapt prod/devel branch below to match the repo settings!!!
 #
 # This Makefile provides the following targets:
-# make setup-gitflow
-# make setup-git-submodule
-# make up
-# make git-submodule-update
-# make start-{major,minor,patch}-version-bump
-# make release
-# make info-{git,version}
+#   make setup-gitflow
+#   make setup-git-submodule
+#   make up
+#   make git-submodule-update
+#   make start-{major,minor,patch}-version-bump
+#   make release
+#   make info-{git,version}
 
 # Git setup
 GITFLOW_BRANCH_PRODUCTION = production
@@ -19,7 +19,7 @@ IS_GIT_REPO_DIRTY  = $(shell git diff --shortstat 2> /dev/null | tail -n1 )
 HAS_GITFLOW        = $(shell git flow version 2>/dev/null || [ $$? -eq 0 ])
 
 # Repository versionning management
-VERSION       = $(shell [ -f VERSION ] && head VERSION || echo '0.0.1')
+VERSION        = $(shell [ -f VERSION ] && head VERSION || echo '0.0.1')
 VERSION_MAJOR  = $(shell echo $(VERSION) | sed "s/^\([0-9]*\).*/\1/")
 VERSION_MINOR  = $(shell echo $(VERSION) | sed "s/[0-9]*\.\([0-9]*\).*/\1/")
 VERSION_PATCH  = $(shell echo $(VERSION) | sed "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/")
