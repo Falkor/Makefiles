@@ -1,6 +1,6 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2026-07-17 14:53 svarrette>
+# Time-stamp: <Fri 2026-07-17 15:02 svarrette>
 ##################################################################################
 # Copyright (c) 2023-2026 Sebastien Varrette
 # Latest version of this Makefile: see
@@ -72,13 +72,6 @@ FEDORA_SERVER_CHECKSUMS      = '$(FEDORA_SERVER_MIRROR)/Fedora-Server-$(FEDORA_V
 FEDORA_SERVER_CHECKSUMS_SIGN = '$(FEDORA_SERVER_CHECKSUMS)'
 FEDORA_SILVERBLUE_CHECKSUMS			 = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-$(FEDORA_VERSION)-$(FEDORA_ARCH)-CHECKSUM'
 FEDORA_SILVERBLUE_CHECKSUMS_SIGN = '$(FEDORA_SILVERBLUE_CHECKSUMS)'
-
-
-# MINT_VERSION = 22.2
-# MINT_MIRROR  = 'https://mirrors.univ-reims.fr/IMAGES/mint/stable/$(MINT_VERSION)'
-# MINT_ISO_URL = '$(MINT_MIRROR)/linuxmint-$(MINT_VERSION)-cinnamon-64bit.iso'
-# MINT_CHECKSUMS			= '$(MINT_MIRROR)/sha256sum.txt'
-# MINT_CHECKSUMS_SIGN = '$(MINT_MIRROR)/sha256sum.txt.gpg'
 
 # RHEL_VERSION	= 10.2
 # RHEL_ISO_TYPE	= dvd
@@ -410,30 +403,6 @@ clean-fedora: clean-fedora-checksums __clean-iso-fedora __clean-iso-fedora-serve
 	-rm -f $(ISO_DIR)/fedora.iso
 	-rm -f $(ISO_DIR)/fedora-server.iso
 	-rm -f $(ISO_DIR)/fedora-silverblue.iso
-
-
-# ########## Linux Mint ###########
-# mint: fetch-mint check-mint-iso
-
-# fetch-mint: fetch-mint-iso fetch-mint-iso-checksum fetch-mint-gpg-keys
-# fetch-mint-iso: __fetch-iso-mint
-# fetch-mint-iso-checksum: __fetch-iso-mint-checksum  __fetch-iso-mint-checksum-sign
-
-# $(eval $(call __FETCH,iso-mint,$(ISO_DIR),$(MINT_ISO_URL)))
-# $(eval $(call __FETCH,iso-mint-checksum,$(ISO_DIR),$(MINT_CHECKSUMS)))
-# $(eval $(call __FETCH,iso-mint-checksum-sign,$(ISO_DIR),$(MINT_CHECKSUMS_SIGN)))
-
-# fetch-mint-gpg-keys:
-# 	@echo "=> collect the Mint GPG keys listed on https://linuxmint-installation-guide.readthedocs.io/en/latest/verify.html"
-# 	gpg --keyid-format long --keyserver keyserver.ubuntu.com --recv-keys 27DEB15644C6B3CF3BD7D291300F846BA25BAE09
-
-# check-mint-iso: fetch-mint __gpg_verify_detached_sign-iso-mint-checksum __check-iso-mint clean-mint-checksums
-# $(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-mint-checksum,$(ISO_DIR),$(MINT_CHECKSUMS),$(MINT_CHECKSUMS_SIGN)))
-# $(eval $(call __VERIFY_ISO_CHECKSUM,mint,$(ISO_DIR),$(MINT_ISO_URL),$(MINT_CHECKSUMS)))
-
-# clean-mint-checksums:  __clean-iso-mint-checksum __clean-iso-mint-checksum-sign
-# clean-mint: clean-mint-checksums __clean-iso-mint
-# 	-rm -f $(ISO_DIR)/mint.iso
 
 
 ########## Rocky Linux ###########
