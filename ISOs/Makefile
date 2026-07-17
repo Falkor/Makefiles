@@ -1,9 +1,8 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2026-07-17 11:26 svarrette>
+# Time-stamp: <Fri 2026-07-17 14:02 svarrette>
 ##################################################################################
-#
-# Copyright (c) 2023-2025 Sebastien Varrette
+# Copyright (c) 2023-2026 Sebastien Varrette
 # Latest version of this Makefile: see
 #      https://github.com/Falkor/Makefiles/tree/devel/ISOs
 #
@@ -38,7 +37,7 @@ $(foreach exec,$(EXECUTABLES),\
 
 ############
 # List of supported OS in this Makefile (corresponding to directive names)
-SUPPORTED_OS = debian ubuntu archlinux fedora fedora-silverblue mint rockylinux almalinux archlinux pfsense
+SUPPORTED_OS = debian ubuntu ubuntu-server archlinux fedora fedora-silverblue rockylinux almalinux archlinux pfsense
 
 ### OS ISOs characteristics to download and check
 # You normally only need to update the <OS>_VERSION variable to the latest version
@@ -49,10 +48,11 @@ DEBIAN_ISO_URL = '$(DEBIAN_MIRROR)/debian-$(DEBIAN_VERSION)-$(DEBIAN_ARCH)-netin
 DEBIAN_CHECKSUMS      = '$(DEBIAN_MIRROR)/SHA256SUMS'
 DEBIAN_CHECKSUMS_SIGN = '$(DEBIAN_MIRROR)/SHA256SUMS.sign'
 
-UBUNTU_VERSION = 24.04.3
+UBUNTU_VERSION = 26.04
 UBUNTU_ARCH    = $(DEBIAN_ARCH)
 UBUNTU_MIRROR  = 'https://ubuntu.mirrors.ovh.net/ubuntu-releases/$(UBUNTU_VERSION)'
 UBUNTU_ISO_URL = '$(UBUNTU_MIRROR)/ubuntu-$(UBUNTU_VERSION)-desktop-$(UBUNTU_ARCH).iso'
+UBUNTU_SERVER_ISO_URL = '$(UBUNTU_MIRROR)/ubuntu-$(UBUNTU_VERSION)-live-server-$(UBUNTU_ARCH).iso'
 UBUNTU_CHECKSUMS      = '$(UBUNTU_MIRROR)/SHA256SUMS'
 UBUNTU_CHECKSUMS_SIGN = '$(UBUNTU_MIRROR)/SHA256SUMS.gpg'
 
@@ -72,11 +72,11 @@ FEDORA_SILVERBLUE_ISO_URL = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-ostre
 # Just why reverse version <-> arch ????
 FEDORA_SILVERBLUE_CHECKSUMS      = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-$(FEDORA_SILVERBLUE_VERSION)-$(FEDORA_SILVERBLUE_ARCH)-CHECKSUM'
 
-MINT_VERSION = 22.2
-MINT_MIRROR  = 'https://mirrors.univ-reims.fr/IMAGES/mint/stable/$(MINT_VERSION)'
-MINT_ISO_URL = '$(MINT_MIRROR)/linuxmint-$(MINT_VERSION)-cinnamon-64bit.iso'
-MINT_CHECKSUMS			= '$(MINT_MIRROR)/sha256sum.txt'
-MINT_CHECKSUMS_SIGN = '$(MINT_MIRROR)/sha256sum.txt.gpg'
+# MINT_VERSION = 22.2
+# MINT_MIRROR  = 'https://mirrors.univ-reims.fr/IMAGES/mint/stable/$(MINT_VERSION)'
+# MINT_ISO_URL = '$(MINT_MIRROR)/linuxmint-$(MINT_VERSION)-cinnamon-64bit.iso'
+# MINT_CHECKSUMS			= '$(MINT_MIRROR)/sha256sum.txt'
+# MINT_CHECKSUMS_SIGN = '$(MINT_MIRROR)/sha256sum.txt.gpg'
 
 # RHEL_VERSION	= 10.2
 # RHEL_ISO_TYPE	= dvd
@@ -260,16 +260,17 @@ info-iso:
 
 list:
 	@echo "=> list of supported OS <os>:"
-	@echo "      <os>:    Distrib   Version   Arch  URL "
-	@echo "----------- ---------- -------- ------ ---------"
-	@printf "%10s: %10s %8s %6s %s\n" "debian"     "Debian"     $(DEBIAN_VERSION) $(DEBIAN_ARCH) $(DEBIAN_ISO_URL)
-	@printf "%10s: %10s %8s %6s %s\n"	"ubuntu"     "Ubuntu"     $(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_ISO_URL)
-	@printf "%10s: %10s %8s %6s %s\n"	"fedora"     "Fedora"     $(FEDORA_VERSION) $(FEDORA_ARCH) $(FEDORA_ISO_URL)
-	@printf "%10s: %10s %8s %6s %s\n"	"silverblue" "Fedora *"   $(FEDORA_SILVERBLUE_VERSION) $(FEDORA_SILVERBLUE_ARCH) $(FEDORA_SILVERBLUE_ISO_URL)
-	@printf "%10s: %10s %8s %6s %s\n"	"mint"   "Linux Mint"     $(MINT_VERSION)   $(MINT_ARCH)   $(MINT_ISO_URL)
-	@printf "%10s: %10s %8s %6s %s\n"	"rockylinux" "RockyLinux" $(ROCKYLINUX_VERSION) $(ROCKYLINUX_ARCH) $(ROCKYLINUX_ISO_URL)
-	@printf "%10s: %10s %8s %6s %s\n"	"archlinux"  "ArchLinux"  $(ARCHLINUX_VERSION) $(ARCHLINUX_ARCH) $(ARCHLINUX_ISO_URL)
-	@printf "%10s: %10s %8s %6s %s\n"	"pfsense"    "pfSense"    $(PFSENSE_VERSION) $(PFSENSE_ARCH) $(PFSENSE_ISO_URL)
+	@echo "           <os>:       Distrib   Version   Arch  URL "
+	@echo "---------------- -------------- -------- ------ ---------"
+	@printf "%15s: %14s %8s %6s %s\n" "debian"		 "Debian"			$(DEBIAN_VERSION) $(DEBIAN_ARCH) $(DEBIAN_ISO_URL)
+	@printf "%15s: %14s %8s %6s %s\n"	"ubuntu" "Ubuntu Desktop"	$(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_ISO_URL)
+	@printf "%15s: %14s %8s %6s %s\n"	"ubuntu-server" "Ubuntu Server" $(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_SERVER_ISO_URL)
+	@printf "%15s: %14s %8s %6s %s\n"	"fedora"		 "Fedora"			$(FEDORA_VERSION) $(FEDORA_ARCH) $(FEDORA_ISO_URL)
+	@printf "%15s: %14s %8s %6s %s\n"	"silverblue" "Fedora Silverblue"		$(FEDORA_SILVERBLUE_VERSION) $(FEDORA_SILVERBLUE_ARCH) $(FEDORA_SILVERBLUE_ISO_URL)
+# 	@printf "%15s: %14s %8s %6s %s\n"	"mint"	 "Linux Mint"			$(MINT_VERSION)		$(MINT_ARCH)	 $(MINT_ISO_URL)
+	@printf "%15s: %14s %8s %6s %s\n"	"rockylinux" "RockyLinux" $(ROCKYLINUX_VERSION) $(ROCKYLINUX_ARCH) $(ROCKYLINUX_ISO_URL)
+	@printf "%15s: %14s %8s %6s %s\n"	"archlinux"	 "ArchLinux"	$(ARCHLINUX_VERSION) $(ARCHLINUX_ARCH) $(ARCHLINUX_ISO_URL)
+	@printf "%15s: %14s %8s %6s %s\n"	"pfsense"		 "pfSense"		$(PFSENSE_VERSION) $(PFSENSE_ARCH) $(PFSENSE_ISO_URL)
 	@echo "------------------------------------------------"
 	@echo "Use make <os> to:"
 	@echo "  1. fetch ISO and the associated checksum files and eventual signatures"
@@ -288,7 +289,7 @@ list:
 clean: $(CLEAN_TARGETS)
 distclean: $(DISTCLEAN_TARGETS)
 
-clean-checksums: $(SUPPORTED_OS:%=%-checksum)
+clean-checksums: $(SUPPORTED_OS:%=clean-%-checksums)
 
 ###############################################
 ### General fetch and check ISOs directives ###
@@ -307,10 +308,7 @@ check: $(SUPPORTED_OS:%=check-%-iso)
 ##########  Debian ###########
 debian: fetch-debian-iso check-debian-iso
 
-fetch-debian: fetch-debian-iso fetch-debian-iso-checksum fetch-debian-gpg-keys
-fetch-debian-iso: __fetch-iso-debian
-fetch-debian-iso-checksum: __fetch-iso-debian-checksum	__fetch-iso-debian-checksum-sign
-
+fetch-debian-iso: __fetch-iso-debian __fetch-iso-debian-checksum	__fetch-iso-debian-checksum-sign fetch-debian-gpg-keys
 $(eval $(call __FETCH,iso-debian,$(ISO_DIR),$(DEBIAN_ISO_URL)))
 $(eval $(call __FETCH,iso-debian-checksum,$(ISO_DIR),$(DEBIAN_CHECKSUMS)))
 $(eval $(call __FETCH,iso-debian-checksum-sign,$(ISO_DIR),$(DEBIAN_CHECKSUMS_SIGN)))
@@ -321,7 +319,7 @@ fetch-debian-gpg-keys:
 	gpg --keyserver keyring.debian.org --recv-keys 0xDA87E80D6294BE9B
 	gpg --keyserver keyring.debian.org --recv-keys 0x42468F4009EA8AC3
 
-check-debian-iso: fetch-debian __gpg_verify_detached_sign-iso-debian-checksum __check-iso-debian clean-debian-checksums
+check-debian-iso: fetch-debian-iso __gpg_verify_detached_sign-iso-debian-checksum __check-iso-debian clean-debian-checksums
 
 $(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-debian-checksum,$(ISO_DIR),$(DEBIAN_CHECKSUMS),$(DEBIAN_CHECKSUMS_SIGN)))
 $(eval $(call __VERIFY_ISO_CHECKSUM,debian,$(ISO_DIR),$(DEBIAN_ISO_URL),$(DEBIAN_CHECKSUMS)))
@@ -331,29 +329,40 @@ clean-debian: clean-debian-checksums __clean-iso-debian
 	-rm -f $(ISO_DIR)/debian.iso
 
 
-########## Ubuntu ###########
+########## Ubuntu (Desktop and Server)###########
 ubuntu: fetch-ubuntu-iso check-ubuntu-iso
+ubuntu-desktop: fetch-ubuntu-desktop-iso check-ubuntu-desktop-iso  clean-ubuntu-desktop-checksums
+ubuntu-server:  fetch-ubuntu-server-iso  check-ubuntu-server-iso   clean-ubuntu-server-checksums
 
-fetch-ubuntu: fetch-ubuntu-iso fetch-ubuntu-iso-checksum fetch-ubuntu-gpg-keys
-fetch-ubuntu-iso: __fetch-iso-ubuntu
-fetch-ubuntu-iso-checksum: __fetch-iso-ubuntu-checksum  __fetch-iso-ubuntu-sign
+fetch-ubuntu-iso: fetch-ubuntu-desktop-iso __fetch-iso-ubuntu-server
+fetch-ubuntu-desktop-iso: __fetch-iso-ubuntu       __fetch-iso-ubuntu-checksum  __fetch-iso-ubuntu-sign fetch-ubuntu-gpg-keys
+fetch-ubuntu-server-iso: __fetch-iso-ubuntu-server __fetch-iso-ubuntu-checksum  __fetch-iso-ubuntu-sign fetch-ubuntu-gpg-keys
 
 $(eval $(call __FETCH,iso-ubuntu,$(ISO_DIR),$(UBUNTU_ISO_URL)))
 $(eval $(call __FETCH,iso-ubuntu-checksum,$(ISO_DIR),$(UBUNTU_CHECKSUMS)))
 $(eval $(call __FETCH,iso-ubuntu-sign,$(ISO_DIR),$(UBUNTU_CHECKSUMS_SIGN)))
+
+$(eval $(call __FETCH,iso-ubuntu-server,$(ISO_DIR),$(UBUNTU_SERVER_ISO_URL)))
+$(eval $(call __FETCH,iso-ubuntu-server-checksum,$(ISO_DIR),$(UBUNTU_CHECKSUMS)))
 
 fetch-ubuntu-gpg-keys:
 	@echo "=> collect the Ubuntu GPG keys listed on https://ubuntu.com/tutorials/how-to-verify-ubuntu"
 	gpg --keyid-format long --keyserver keyserver.ubuntu.com --recv-keys 0x46181433FBB75451
 	gpg --keyid-format long --keyserver keyserver.ubuntu.com --recv-keys 0xD94AA3F0EFE21092
 
-check-ubuntu-iso: fetch-ubuntu __gpg_verify_detached_sign-iso-ubuntu-checksum __check-iso-ubuntu clean-ubuntu-checksums
-$(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-ubuntu-checksum,$(ISO_DIR),$(UBUNTU_CHECKSUMS),$(UBUNTU_CHECKSUMS_SIGN)))
-$(eval $(call __VERIFY_ISO_CHECKSUM,ubuntu,$(ISO_DIR),$(UBUNTU_ISO_URL),$(UBUNTU_CHECKSUMS)))
+check-ubuntu-iso: fetch-ubuntu-desktop-iso fetch-ubuntu-server-iso __gpg_verify_detached_sign-iso-ubuntu-checksum  __check-iso-ubuntu __check-iso-ubuntu-server clean-ubuntu-server-checksums
+check-ubuntu-desktop-iso: fetch-ubuntu-desktop-iso __gpg_verify_detached_sign-iso-ubuntu-checksum __check-iso-ubuntu  clean-ubuntu-server-checksums
+check-ubuntu-server-iso:  fetch-ubuntu-server-iso  __gpg_verify_detached_sign-iso-ubuntu-server-checksum __check-iso-ubuntu-server clean-ubuntu-checksums
 
-clean-ubuntu-checksums:  __clean-iso-ubuntu-checksum __clean-iso-ubuntu-sign
-clean-ubuntu: clean-ubuntu-checksums __clean-iso-ubuntu
+$(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-ubuntu-checksum,$(ISO_DIR),$(UBUNTU_CHECKSUMS),$(UBUNTU_CHECKSUMS_SIGN)))
+$(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-ubuntu-server-checksum,$(ISO_DIR),$(UBUNTU_CHECKSUMS),$(UBUNTU_CHECKSUMS_SIGN)))
+$(eval $(call __VERIFY_ISO_CHECKSUM,ubuntu,$(ISO_DIR),$(UBUNTU_ISO_URL),$(UBUNTU_CHECKSUMS)))
+$(eval $(call __VERIFY_ISO_CHECKSUM,ubuntu-server,$(ISO_DIR),$(UBUNTU_SERVER_ISO_URL),$(UBUNTU_CHECKSUMS)))
+
+clean-ubuntu-checksums clean-ubuntu-desktop-checksums clean-ubuntu-server-checksums:  __clean-iso-ubuntu-checksum __clean-iso-ubuntu-sign
+clean-ubuntu: clean-ubuntu-checksums __clean-iso-ubuntu __clean-iso-ubuntu-server
 	-rm -f $(ISO_DIR)/ubuntu.iso
+	-rm -f $(ISO_DIR)/ubuntu-server.iso
 
 
 ########## Fedora ###########
@@ -406,28 +415,28 @@ clean-silverblue clean-fedora-silverblue: clean-fedora-silverblue-checksums __cl
 	-rm -f $(ISO_DIR)/fedora-silverblue.iso
 
 
-########## Linux Mint ###########
-mint: fetch-mint check-mint-iso
+# ########## Linux Mint ###########
+# mint: fetch-mint check-mint-iso
 
-fetch-mint: fetch-mint-iso fetch-mint-iso-checksum fetch-mint-gpg-keys
-fetch-mint-iso: __fetch-iso-mint
-fetch-mint-iso-checksum: __fetch-iso-mint-checksum  __fetch-iso-mint-checksum-sign
+# fetch-mint: fetch-mint-iso fetch-mint-iso-checksum fetch-mint-gpg-keys
+# fetch-mint-iso: __fetch-iso-mint
+# fetch-mint-iso-checksum: __fetch-iso-mint-checksum  __fetch-iso-mint-checksum-sign
 
-$(eval $(call __FETCH,iso-mint,$(ISO_DIR),$(MINT_ISO_URL)))
-$(eval $(call __FETCH,iso-mint-checksum,$(ISO_DIR),$(MINT_CHECKSUMS)))
-$(eval $(call __FETCH,iso-mint-checksum-sign,$(ISO_DIR),$(MINT_CHECKSUMS_SIGN)))
+# $(eval $(call __FETCH,iso-mint,$(ISO_DIR),$(MINT_ISO_URL)))
+# $(eval $(call __FETCH,iso-mint-checksum,$(ISO_DIR),$(MINT_CHECKSUMS)))
+# $(eval $(call __FETCH,iso-mint-checksum-sign,$(ISO_DIR),$(MINT_CHECKSUMS_SIGN)))
 
-fetch-mint-gpg-keys:
-	@echo "=> collect the Mint GPG keys listed on https://linuxmint-installation-guide.readthedocs.io/en/latest/verify.html"
-	gpg --keyid-format long --keyserver keyserver.ubuntu.com --recv-keys 27DEB15644C6B3CF3BD7D291300F846BA25BAE09
+# fetch-mint-gpg-keys:
+# 	@echo "=> collect the Mint GPG keys listed on https://linuxmint-installation-guide.readthedocs.io/en/latest/verify.html"
+# 	gpg --keyid-format long --keyserver keyserver.ubuntu.com --recv-keys 27DEB15644C6B3CF3BD7D291300F846BA25BAE09
 
-check-mint-iso: fetch-mint __gpg_verify_detached_sign-iso-mint-checksum __check-iso-mint clean-mint-checksums
-$(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-mint-checksum,$(ISO_DIR),$(MINT_CHECKSUMS),$(MINT_CHECKSUMS_SIGN)))
-$(eval $(call __VERIFY_ISO_CHECKSUM,mint,$(ISO_DIR),$(MINT_ISO_URL),$(MINT_CHECKSUMS)))
+# check-mint-iso: fetch-mint __gpg_verify_detached_sign-iso-mint-checksum __check-iso-mint clean-mint-checksums
+# $(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-mint-checksum,$(ISO_DIR),$(MINT_CHECKSUMS),$(MINT_CHECKSUMS_SIGN)))
+# $(eval $(call __VERIFY_ISO_CHECKSUM,mint,$(ISO_DIR),$(MINT_ISO_URL),$(MINT_CHECKSUMS)))
 
-clean-mint-checksums:  __clean-iso-mint-checksum __clean-iso-mint-checksum-sign
-clean-mint: clean-mint-checksums __clean-iso-mint
-	-rm -f $(ISO_DIR)/mint.iso
+# clean-mint-checksums:  __clean-iso-mint-checksum __clean-iso-mint-checksum-sign
+# clean-mint: clean-mint-checksums __clean-iso-mint
+# 	-rm -f $(ISO_DIR)/mint.iso
 
 
 ########## Rocky Linux ###########
