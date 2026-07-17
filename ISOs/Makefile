@@ -1,6 +1,6 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2026-07-17 15:02 svarrette>
+# Time-stamp: <Fri 2026-07-17 15:25 svarrette>
 ##################################################################################
 # Copyright (c) 2023-2026 Sebastien Varrette
 # Latest version of this Makefile: see
@@ -73,7 +73,7 @@ FEDORA_SERVER_CHECKSUMS_SIGN = '$(FEDORA_SERVER_CHECKSUMS)'
 FEDORA_SILVERBLUE_CHECKSUMS			 = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-$(FEDORA_VERSION)-$(FEDORA_ARCH)-CHECKSUM'
 FEDORA_SILVERBLUE_CHECKSUMS_SIGN = '$(FEDORA_SILVERBLUE_CHECKSUMS)'
 
-# RHEL_VERSION	= 10.2
+RHEL_VERSION	= 10.2
 # RHEL_ISO_TYPE	= dvd
 # RHEL_ARCH		  = x86_64
 # RHEL_MIRROR	  = 'https://developers.redhat.com/content-gateway/file/rhel/'
@@ -82,14 +82,14 @@ FEDORA_SILVERBLUE_CHECKSUMS_SIGN = '$(FEDORA_SILVERBLUE_CHECKSUMS)'
 # RHEL_CHECKSUMS_SIGN = '$(RHEL_MIRROR)/CHECKSUM.sig'
 # RHEL_GPG_KEY = 'https://raw.githubusercontent.com/rocky-linux/checksums/main/keys/RPM-GPG-KEY-Rocky-$(ROCKYLINUX_VERSION_MAJOR)'
 
-ROCKYLINUX_VERSION	= 9.5
+ROCKYLINUX_VERSION	= $(RHEL_VERSION)
 ROCKYLINUX_ISO_TYPE	= minimal
 ROCKYLINUX_ARCH		  = x86_64
 ROCKYLINUX_VERSION_MAJOR	= $(shell echo $(ROCKYLINUX_VERSION) | sed "s/^\([0-9]*\).*/\1/")
 ROCKYLINUX_MIRROR	  = 'https://download.rockylinux.org/pub/rocky/$(ROCKYLINUX_VERSION_MAJOR)/isos/$(ROCKYLINUX_ARCH)'
 ROCKYLINUX_ISO_URL  = '$(ROCKYLINUX_MIRROR)/Rocky-$(ROCKYLINUX_VERSION)-$(ROCKYLINUX_ARCH)-$(ROCKYLINUX_ISO_TYPE).iso'
 ROCKYLINUX_CHECKSUMS      = '$(ROCKYLINUX_MIRROR)/CHECKSUM'
-ROCKYLINUX_CHECKSUMS_SIGN = '$(ROCKYLINUX_MIRROR)/CHECKSUM.sig'
+ROCKYLINUX_CHECKSUMS_SIGN = '$(ROCKYLINUX_CHECKSUMS).asc'
 ROCKYLINUX_GPG_KEY = 'https://raw.githubusercontent.com/rocky-linux/checksums/main/keys/RPM-GPG-KEY-Rocky-$(ROCKYLINUX_VERSION_MAJOR)'
 
 ALMALINUX_VERSION		= $(ROCKYLINUX_VERSION)
@@ -303,7 +303,9 @@ check: $(SUPPORTED_OS:%=check-%-iso)
 # To support/add a new OS, kindly respect the used structure
 # To update the latest version, correcting the <OS>_VERSION variable should be sufficient
 
+##############################
 ##########  Debian ###########
+##############################
 debian: fetch-debian-iso check-debian-iso
 
 fetch-debian-iso: __fetch-iso-debian __fetch-iso-debian-checksum	__fetch-iso-debian-checksum-sign fetch-debian-gpg-keys
@@ -326,8 +328,9 @@ clean-debian-checksums: __clean-iso-debian-checksum __clean-iso-debian-checksum-
 clean-debian: clean-debian-checksums __clean-iso-debian
 	-rm -f $(ISO_DIR)/debian.iso
 
-
+#################################################
 ########## Ubuntu (Desktop and Server)###########
+#################################################
 ubuntu: fetch-ubuntu-iso check-ubuntu-iso
 ubuntu-desktop: fetch-ubuntu-desktop-iso check-ubuntu-desktop-iso  clean-ubuntu-desktop-checksums
 ubuntu-server:  fetch-ubuntu-server-iso  check-ubuntu-server-iso   clean-ubuntu-server-checksums
@@ -362,8 +365,9 @@ clean-ubuntu: clean-ubuntu-checksums __clean-iso-ubuntu __clean-iso-ubuntu-serve
 	-rm -f $(ISO_DIR)/ubuntu.iso
 	-rm -f $(ISO_DIR)/ubuntu-server.iso
 
-
-########## Fedora (Workstation, Server and CoreOS) ###########
+######################################################
+########## Fedora (Workstation and Server) ###########
+######################################################
 fedora: fetch-fedora-iso check-fedora-iso
 
 fetch-fedora-iso: fetch-fedora-workstation-iso fetch-fedora-server-iso fetch-fedora-silverblue-iso
@@ -407,39 +411,28 @@ clean-fedora: clean-fedora-checksums __clean-iso-fedora __clean-iso-fedora-serve
 	-rm -f $(ISO_DIR)/fedora-silverblue.iso
 
 
+##################################
 ########## Rocky Linux ###########
+##################################
 rockylinux: fetch-rockylinux-iso check-rockylinux-iso
 
-fetch-rockylinux: fetch-rockylinux-iso fetch-rockylinux-iso-checksum
-fetch-rockylinux-iso: __fetch-iso-rockylinux
-fetch-rockylinux-iso-checksum: __fetch-iso-rockylinux-checksum __fetch-iso-rockylinux-checksum-sign
+fetch-rockylinux-iso: __fetch-iso-rockylinux __fetch-iso-rockylinux-checksum __fetch-iso-rockylinux-checksum-sign
 
 $(eval $(call __FETCH,iso-rockylinux,$(ISO_DIR),$(ROCKYLINUX_ISO_URL)))
 $(eval $(call __FETCH,iso-rockylinux-checksum,$(ISO_DIR),$(ROCKYLINUX_CHECKSUMS)))
 $(eval $(call __FETCH,iso-rockylinux-checksum-sign,$(ISO_DIR),$(ROCKYLINUX_CHECKSUMS_SIGN)))
-# Unfortunately, no detached .sig or CHECKSUM in 9.0, nor signed version
-$(eval $(call __FETCH,rockylinux-gpg-key,$(ISO_DIR),$(ROCKYLINUX_GPG_KEY)))
 
-fetch-rockylinux-gpg-keys: __fetch-rockylinux-gpg-key
-	@echo "=> import the Rockylinux GPG keys"
-	gpg --import $(ISO_DIR)/$(shell basename $(ROCKYLINUX_GPG_KEY))
-	$(MAKE) __clean-rockylinux-gpg-key
+fetch-rockylinux-gpg-keys:
+	@echo "=> collect the RockyLinux GPG keys (Release Engineering (Rocky Linux 10))"
+	gpg --keyid-format long --keyserver keyserver.ubuntu.com --recv-keys FC226859C0860BF0DDB95B085B106C736FEDFC85
 
-check-rockylinux-iso: fetch-rockylinux fetch-rockylinux-gpg-keys __gpg_verify_detached_sign-iso-rockylinux-checksum __check-iso-rockylinux clean-rockylinux-checksums
-
-ifeq ($(shell expr $(ROCKYLINUX_VERSION_MAJOR) \>= 9), 1)
-__gpg_verify_detached_sign-iso-rockylinux-checksum:
-	@echo "=> Unfortunately on RockyLinux >= $(ROCKYLINUX_VERSION_MAJOR), no $(shell basename $(ROCKYLINUX_CHECKSUMS_SIGN)) available thus ignoring the verification"
-else
+check-rockylinux-iso: fetch-rockylinux-iso __gpg_verify_detached_sign-iso-rockylinux-checksum __check-iso-rockylinux clean-rockylinux-checksums
 $(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-rockylinux-checksum,$(ISO_DIR),$(ROCKYLINUX_CHECKSUMS),$(ROCKYLINUX_CHECKSUMS_SIGN)))
-endif
-
 $(eval $(call __VERIFY_ISO_CHECKSUM,rockylinux,$(ISO_DIR),$(ROCKYLINUX_ISO_URL),$(ROCKYLINUX_CHECKSUMS)))
 
 clean-rockylinux-checksums: __clean-iso-rockylinux-checksum __clean-iso-rockylinux-checksum-sign
 clean-rockylinux: clean-rockylinux-checksums __clean-iso-rockylinux
 	-rm -f $(ISO_DIR)/rockylinux.iso
-
 
 ########## AlmaLinux ###########
 almalinux: fetch-almalinux-iso check-almalinux-iso
