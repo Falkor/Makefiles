@@ -1,0 +1,598 @@
+#! /usr/bin/env bash
+# Time-stamp: <Sat 2026-07-11 11:42 svarrette>
+################################################################################
+# repo-init - Wrapper script to bootsrap a repository with several useful
+#             resources: Makefile infrastructure to pilot repository lifecycle,
+#             mkdocs-materials, etc.
+# Usage: see repo-init -h
+################################################################################
+# set -o nounset -o errexit -o pipefail
+set -o errexit -o pipefail
+# set -x
+
+# cosmetics
+COLOR_BOLD="\033[1m"
+COLOR_VIOLET="\033[0;35m"
+COLOR_RESET="\033[0m"
+
+# Local variables
+#SCRIPTDIR="$(cd "$( dirname "BASH_SOURCE[0]" )" && pwd )"
+#TOP_DIR="$(  cd "$( dirname "BASH_SOURCE[0]" )" && git rev-parse --show-toplevel)"
+CMD_PREFIX="echo"
+FORCE=
+# target directory to bootstrap - empty means current directory.
+TARGET=
+DIR="$(pwd)"
+
+### Git stuff
+# initialize with git-flow
+WITH_GITFLOW=y
+GIT_INITIAL_BRANCH=main
+GITFLOW_BRANCH_PRODUCTION=production
+GIT_SUBMODULES_DIR=".submodules"
+
+# Repository layout
+VENV_DIR="venv"
+SCRIPTS_DIR="scripts"
+
+# Template stuff
+TEMPLATE_REPO_MKDOCS_RAW_URL="https://gitlab.com/svarrette-anssi/tutorial-ssh/-/raw/main"
+FIGLET_WIDTH=100
+
+VERSION_file="VERSION"
+README_md="README.md"
+requirements_txt="requirements.txt"
+COPYRIGHT=""
+repo_description=
+repo_remote_url=
+repo_url=
+git_service=
+repo_username=
+repo_dir=
+repo_name=
+repo_by=
+repo_authors=
+repo_badges=
+
+################################################################################
+info()    { echo -e "\n${COLOR_BOLD}$*${COLOR_RESET}"; }
+error()   { echo -e "${COLOR_BOLD}*** ERROR *** $*${COLOR_RESET}"; }
+warning() { echo -e "${COLOR_VIOLET}/!\ WARNING:${COLOR_RESET} $*"; }
+print_error_and_exit() { error "$*"; exit 1; }
+usage() {
+  cat <<EOF
+$(basename "$0"): Wrapper script to initiate a Git repository according to
+  a favorite layout you may find useful:
+  - the repository will be configured according to the git-flow guidelines
+  - a modular and generic Makefile infrastructure will be set to pilot the
+    high-level operations of this repository
+  - a Mkdocs-material based [locally rendered] website hosting the project
+    documentation
+
+USAGE
+  $(basename "$0") [-f] [-b BRANCH] [-t TITLE] [--desc DESC] [--set-url URL] [-x]
+
+OPTIONS:
+  -b BRANCH          Set the initial branch for the repository (default: ${GIT_INITIAL_BRANCH})
+                     Note: branch name for production releases: ${GITFLOW_BRANCH_PRODUCTION}
+  -d --dir DIR       Set directory where to boostrap the repository
+                     (default: current directory)
+  --desc "DESC"      Set the description (for README.md and docs/index.md)
+  -f --force         Force mode
+  -g --git-flow      Setup a git-flow repository (two branches) - **Default mode**
+                     Use -s (see below) if you prefer to configure a single branch
+  -n --dry-run       Dry run mode (**DEFAULT** mode): echo the commands to be run
+  -s --single-branch Setup a single branch repository (gitlab/github workflow)
+  -t --title TITLE   Set title to display in ASCII art using figlet (in README.md
+                     and docs/index.md)
+  -u --set-url URL   Git remote url for the project
+  -x --exec          Really execute the commands, i.e. don't just echo them
+
+EXAMPLE
+  $(basename "$0")    # Dry-run: show commands to be executed
+  $(basename "$0") -x
+EOF
+}
+################################################################################
+###
+# print warning when running in echo mode (default behaviour)
+##
+warning_dry_run() {
+  if [ -n "${CMD_PREFIX}" ]; then
+    echo ""
+    warning "DRY-RUN MODE!!! Suffix with '-x' to REALLY execute the commands, i.e. use:"
+    warning "   $0 [...] -x"
+    exit 0
+  fi
+}
+###
+# Ask for a question - return 0 (true) if Yes is answered (default value)
+##
+ask(){
+  [ -n "${FORCE}" ] && return 0 # aka don't ask...
+  echo -n -e "${COLOR_VIOLET}/!\ WARNING:${COLOR_RESET} $* ${COLOR_BOLD}[Y|n]${COLOR_RESET} "
+  read -r answer                                   #   0: true     1:false
+  [[ -z "${answer}" || "${answer}" =~ ^[Yy].*$ ]] && return 0 || return 1
+}
+####
+# ask to continue. exit 1 if the answer is no
+##
+really_continue() { ask "Are you sure you want to continue?" || exit 1; }
+
+###
+# fetch files over the internet using <url>, place it under <subdir>.
+# usage: fetch("<url>","<subdir>")
+##
+################################################################################
+fetch() {
+  local url="$1"
+  [ -z "${url}" ] && print_error_and_exit "no url passed"
+  [[ ! "${url}" =~ ^http.* ]] && print_error_and_exit "badly formatted url '${url}'"
+  local filename
+  filename=$(basename "${url}")
+  local subdir="$2"
+  [ -z "${subdir}" ] && subdir="$(pwd)"
+  ${CMD_PREFIX} curl -L -o "${subdir}/${filename}" "${url}"
+}
+
+#######################
+# Setup git repository
+##
+
+setup_git() {
+  info "=> initialize git repository"
+  ${CMD_PREFIX} git init --initial-branch="${GIT_INITIAL_BRANCH}"
+}
+
+# git-flow init
+setup_gitflow() {
+  info "=> initialize git-flow"
+  # ${CMD_PREFIX} git init --initial-branch="${GIT_INITIAL_BRANCH}"
+  ${CMD_PREFIX} git config gitflow.branch.master  "${GITFLOW_BRANCH_PRODUCTION}"
+  ${CMD_PREFIX} git config gitflow.branch.develop "${GIT_INITIAL_BRANCH}"
+  ${CMD_PREFIX} git config gitflow.prefix.feature feature/
+  ${CMD_PREFIX} git config gitflow.prefix.release release/
+  ${CMD_PREFIX} git config gitflow.prefix.hotfix  hotfix/
+  ${CMD_PREFIX} git config gitflow.prefix.bugfix  bugfix/
+  ${CMD_PREFIX} git config gitflow.prefix.support support/
+  ${CMD_PREFIX} git config gitflow.prefix.versiontag v
+  ${CMD_PREFIX} git flow init
+  # Note: to force an empty commit (embedded in git flow init), use:
+  #${CMD_PREFIX} git commit --allow-empty --quiet -m "Initial commit"
+  if [ -n "${repo_remote_url}" ]; then
+    if ask "Do you want to set the upstream branches ?"; then
+      for br in "${GITFLOW_BRANCH_PRODUCTION}" "${GIT_INITIAL_BRANCH}"; do
+        ${CMD_PREFIX} git switch "${br}"
+        ${CMD_PREFIX} git push -u origin "${br}"
+      done
+    fi
+  fi
+}
+
+
+
+#####################
+# Setup python venv
+##
+setup_venv() {
+  ${CMD_PREFIX} cp ${GIT_SUBMODULES_DIR}/Makefiles/venv/.Makefile.venv .
+  ${CMD_PREFIX} mkdir -p ${VENV_DIR}
+  venv_gitignore="${VENV_DIR}/.gitignore"
+  if [ ! -f "${venv_gitignore}" ]; then
+    echo "- populating ${venv_gitignore}"
+    [ -n "${CMD_PREFIX}" ] && venv_gitignore="/dev/null"
+    cat <<'EOF' | tee "${venv_gitignore}"
+*
+!.gitignore
+EOF
+  fi
+  if ask "fetch requirements.txt for mkdocs-material ?"; then
+    fetch "${TEMPLATE_REPO_MKDOCS_RAW_URL}/requirements.txt"
+  fi
+}
+###
+# setup direnv .envrc
+##
+setup_direnv_envrc() {
+  if [ ! -f '.envrc' ]; then
+    info "=> initiate .envrc"
+    fetch "${TEMPLATE_REPO_MKDOCS_RAW_URL}/.envrc"
+  fi
+}
+
+
+###############
+# Setup mkdocs
+##
+setup_mkdocs() {
+  if [ ! -f "${requirements_txt}" ]; then
+    if ask "Do you want to setup the python venv and populate it for mkdocs material?"; then
+      info "=> bootstrap ${VENV_DIR} and ${requirements_txt}"
+      ${CMD_PREFIX} python3 -m venv "${VENV_DIR}"
+      ${CMD_PREFIX} source venv/bin/activate
+      ${CMD_PREFIX} pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin mkdocs-git-revision-date-localized-plugin markdown-include mkdocs-include-markdown-plugin mdx-truly-sane-lists
+      [ -n "${CMD_PREFIX}" ] && requirements_txt="/dev/null"
+      ${CMD_PREFIX} pip freeze -l | tee "${requirements_txt}"
+    fi
+  fi
+  ${CMD_PREFIX} mkdir -p docs
+  if [ ! -f "docs/index.md" ]; then
+    index_md="docs/index.md"
+    info "=> bootstrap ${index_md}"
+    [ -n "${CMD_PREFIX}" ] && index_md="/dev/null"
+    setup_README_header "${index_md}"
+  fi
+
+  if [ ! -f "mkdocs.yml" ]; then
+    info "=> initiate mkdocs.yml"
+    read -p "site_name: " -e -i "${repo_title}"        -r site_name
+    ############## mkdocs.yml header ##############
+    info "  - bootstrap mkdocs.yml HEADER from collected inputs"
+    local mkdocs_yml="mkdocs.yml"
+    [ -n "${CMD_PREFIX}" ] && mkdocs_yml="/dev/null"
+    cat <<EOF | tee "${mkdocs_yml}"
+# mkdocs.yml - Main Mkdocs configuration file - see https://squidfunk.github.io/mkdocs-material/
+site_name: ${site_name}
+nav:
+- Home: 'index.md'
+
+# Project Information
+site_description: "${repo_description}"
+site_author: ${repo_authors}
+site_dir: public
+
+# Repository
+repo_name: ${repo_name}
+repo_url:  ${repo_url}
+
+copyright: ${COPYRIGHT}
+
+EOF
+    ############## mkdocs.yml footer ##############
+    info "  - complete mkdocs.yml FOOTER for using the mkdocs-material theme"
+    cat <<'EOF' | tee -a ${mkdocs_yml}
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/gitlab
+    view: material/eye
+  # logo: images/logo.png
+  language: en
+  palette:
+    primary: blue
+    accent:  light blue
+  features:
+    - navigation.instant
+    - content.code.copy
+  # #   - tabs
+
+plugins:
+  - search # necessary for search to work
+  - git-revision-date-localized:
+      type: date
+  - include-markdown
+  - mermaid2:
+      javascript: https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.min.js
+
+  # Extensions
+markdown_extensions:
+  - attr_list
+  # notes, warnings, hints, ...
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - footnotes
+  - markdown_include.include:
+      base_path: docs
+  - markdown.extensions.admonition
+  - md_in_html
+  - mdx_truly_sane_lists
+  - meta
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.details
+  # Icons from Emoji extensions, giving access to following icon sets:
+  # - Material Design: https://materialdesignicons.com/
+  # - FontAwesome:     https://fontawesome.com/icons?d=gallery&m=free
+  # – Octicons:        https://octicons.github.com/
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  # auto-link HTML, FTP, and email links
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      social_url_shorthand: true
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      base_path: snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tilde
+  # code blocks with syntax highlighting, graphs
+  - tables
+  - toc:
+      permalink: true
+#extra_css:
+#  - stylesheets/extra.css
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js
+  - javascripts/tablesort.js
+  - https://unpkg.com/tablesort@5.7.1/dist/tablesort.min.js
+
+validation:
+  links:
+    not_found: ignore
+    anchors: info
+    absolute_links: info
+    unrecognized_links: info
+EOF
+  fi # mkdocs.yml
+
+  #############################################################
+  info "=> bootstrapping MkDocs docs/{javascripts,stylesheets}"
+  ${CMD_PREFIX} mkdir -p docs/{javascripts,stylesheets}
+  # https://squidfunk.github.io/mkdocs-material/reference/math/
+  mathjax_js="docs/javascripts/mathjax.js"
+  if [ ! -f "${mathjax_js}" ]; then
+    echo " - populate  ${mathjax_js}"
+    [ -n "${CMD_PREFIX}" ] && mathjax_js="/dev/null"
+    cat <<'EOF' | tee "${mathjax_js}"
+window.MathJax = {
+  tex: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]],
+    processEscapes: true,
+    processEnvironments: true
+  },
+  options: {
+    ignoreHtmlClass: ".*|",
+    processHtmlClass: "arithmatex"
+  }
+};
+document$.subscribe(() => {
+  MathJax.startup.output.clearCache()
+  MathJax.typesetClear()
+  MathJax.texReset()
+  MathJax.typesetPromise()
+})
+EOF
+  fi
+  # https://squidfunk.github.io/mkdocs-material/reference/data-tables/?h=tablesort#sortable-tables
+  tablesort_js="docs/javascripts/tablesort.js"
+  if [ ! -f "${tablesort_js}" ]; then
+    echo " - populate  ${tablesort_js}"
+    [ -n "${CMD_PREFIX}" ] && tablesort_js="/dev/null"
+    cat <<'EOF' | tee "${tablesort_js}"
+document$.subscribe(function() {
+  var tables = document.querySelectorAll("article table:not([class])")
+  tables.forEach(function(table) {
+    new Tablesort(table)
+  })
+})
+EOF
+  fi
+}
+
+#########################################
+# Setup main README - by slices ;)
+# Usage: setup_README_<part> [<filename>]
+##
+#______________________
+setup_README_header() {
+  local filename="${1:-${README_md}}"
+  cat <<EOF | tee "${filename}"
+${repo_badges}
+
+EOF
+  figlet -c -w "${FIGLET_WIDTH}" "${repo_title}" | tee -a "${filename}"
+  printf "%*s\n" $(((${#COPYRIGHT}+FIGLET_WIDTH)/2)) "${COPYRIGHT}" | tee -a "${filename}"
+  cat <<EOF | tee -a "${filename}"
+# ${repo_title}
+
+${repo_description}
+
+EOF
+}
+#_________________________________
+setup_README_repo_install_tldr() {
+  local filename="${1:-${README_md}}"
+  cat <<'EOF' | tee -a "${filename}"
+# Installation and Repository Setup
+
+```bash
+### TL:DR;
+# /!\ ADAPT root directory according to your tastes ;)
+EOF
+  cat <<EOF | tee -a "${filename}"
+mkdir -p ~/git/$(dirname "${repo_url}" | sed 's/http[s]:\/\///' | sed 's/git@//')
+cd ~/git/$(      dirname "${repo_url}" | sed 's/http[s]:\/\///' | sed 's/git@//')
+# ... now clone the repository
+git clone ${repo_remote_url:-<url>}
+# ... and setup your working copy
+cd ${repo_dir:-<dir>}
+EOF
+  cat <<'EOF' | tee -a "${filename}"
+make setup   # /!\ IMPORTANT: setup git submodules, default branches etc.
+make setup-python # if needed: setup python virtual env from requirements.txt
+```
+
+At any point of time, assuming your working copy of this repository is clean, you can update your local branches by running:
+
+```bash
+make up # Equiv. of 'git pull' for each branches
+```
+
+_Note_: if another collaborator have upgraded the Git submodules for this repository and pushed the corresponding commit, youll end upon pulling in a **dirty state** (as reported by modifications within the `.submodules/` directory). In that case, run:
+
+```bash
+make git-submodule-update # OR, manually: git submodule init && git submodule update
+```
+
+EOF
+}
+#______________________
+setup_README_issues() {
+  local filename="${1:-${README_md}}"
+  cat <<EOF | tee -a "${filename}"
+## Issues / Feature request
+
+You can submit bug / issues / feature request using the [\`${repo_name}\`  Project Tracker](${repo_url}/issues)
+
+EOF
+}
+#_______________________
+setup_README_mkdocs() {
+  local filename="${1:-${README_md}}"
+  cat <<'EOF' | tee -a "${filename}"
+## Local Documentation
+
+See [`docs/`](docs/index.md) : the documentation for this project is handled by [`mkdocs`](http://www.mkdocs.org/#installation) with several [python packages] dependencies (in particular [`mkdocs-materials`](https://squidfunk.github.io/mkdocs-material/) - see local requirement file [`requirements.txt`](requirements.txt).
+After setting up your virtual environment, you might wish to render the docs with:
+
+```bash
+EOF
+  cat <<EOF | tee -a "${filename}"
+# if not yet done: create a Python virtual environment under '${VENV_DIR}/'
+EOF
+  cat <<'EOF' | tee -a "${filename}"
+make setup-python # ... and install dependencies listed in requirements.txt
+
+# ... activate the created virtual environment - this must be done every time you
+#     go into this repo (deactivate later)
+source venv/bin/activate     # Later: deactivate
+# Alternative using direnv to make this done automatically upon visiting this directory
+# direnv allow .     # to allow the local .envrc
+make doc   # Alternative:   mkdocs serve --livereload
+```
+
+And visit with your favorite browser the URL `http://localhost:8000`.
+
+EOF
+}
+
+
+
+################################################################################
+#[ $UID -gt 0 ] && print_error_and_exit "You must be root to execute this script (current uid: $UID)"
+[[ "$*" =~ [[:space:]]"-x" ]] && CMD_PREFIX=
+# Check for options
+while [ $# -ge 1 ]; do
+  case $1 in
+    -h | --help) usage; exit 0;;
+    -b | --branch | --initial-branch) shift; GIT_INITIAL_BRANCH="$1";;
+    -d | --dest | --dir)  shift; TARGET="$1";;
+    --desc) shift; repo_description="$1";;
+    -f | --force) FORCE="$1";;
+    -g | --gitflow | --git-flow) WITH_GITFLOW="$1";;
+    -n | --dry-run) CMD_PREFIX="echo" ;;
+    -s | --single-branch) WITH_GITFLOW="";;
+    -t | --title) shift; repo_title="$1";;
+    -u | --url | --set-url) shift; repo_remote_url="$1";;
+    -x | --exec)    CMD_PREFIX= ;;
+    *) TARGET="*"; break;;
+  esac
+  shift
+done
+
+# Safeguards
+if [ -n "${TARGET}" ]; then
+  [ ! -d "${TARGET}" ] && print_error_and_exit "Unexisting target directory ${TARGET}. '$0 -h' for usage "
+  DIR="${TARGET}"
+fi
+if [ -d "${DIR}/.git" ]; then
+  really_continue "Git repository already initialized and you might corrupt its content by this operation."
+fi
+# check commands
+for cmd in git git-flow python3; do
+  [ ! -x "$(command -v ${cmd} 2>/dev/null)" ] && print_error_and_exit "Unable to find the command ${cmd}. Exiting"
+done
+# tee target - /dev/null if in dry-run
+if [ -n "${CMD_PREFIX}" ]; then
+  VERSION_file="/dev/null"
+  README_md="/dev/null"
+fi
+
+### Let's go ###
+[ -n "${TARGET}" ] && ${CMD_PREFIX} cd "${DIR}"
+setup_git
+[ -n "${WITH_GITFLOW}" ] && setup_gitflow
+
+info "=> bootstrap directory structure"
+${CMD_PREFIX} mkdir -p "${SCRIPTS_DIR}"
+
+if [ ! -f "${VERSION_file}" ]; then
+  info "=> bootstrapping a VERSION file"
+  ${CMD_PREFIX} echo '0.0.0' | tee "${VERSION_file}"
+fi
+
+info "=> initialize GNU Make infrastructure"
+if [ ! -d "${GIT_SUBMODULES_DIR}/Makefiles" ]; then
+  ${CMD_PREFIX} git submodule add https://github.com/Falkor/Makefiles.git "${GIT_SUBMODULES_DIR}/Makefiles"
+  ${CMD_PREFIX} git commit -s -S -m "feat(submodules): add Git submodule '${GIT_SUBMODULES_DIR}/Makefiles' from 'https://github.com/Falkor/Makefiles.git" .gitmodules  "${GIT_SUBMODULES_DIR}/Makefiles"
+fi
+if [ ! -f 'Makefile' ]; then
+  ${CMD_PREFIX} cp ${GIT_SUBMODULES_DIR}/Makefiles/template/Makefile .
+fi
+
+if ask "configure .Makefile.git for git[-flow] and repository versioning management ?"; then
+  if [ ! -f '.Makefile.git' ]; then
+    if [ -n "${WITH_GITFLOW}" ]; then
+      ${CMD_PREFIX} cp ${GIT_SUBMODULES_DIR}/Makefiles/gitflow/.Makefile.git .
+      ${CMD_PREFIX} sed -i -e "s/^\(GITFLOW_BRANCH_PRODUCTION\s*\)=\s*production/\1 = ${GITFLOW_BRANCH_PRODUCTION}/" .Makefile.git
+      ${CMD_PREFIX} sed -i -e "s/^\(GITFLOW_BRANCH_DEVELOP\s*\)=\s*main/\1 = ${GIT_INITIAL_BRANCH}/" .Makefile.git
+    else
+      ${CMD_PREFIX} cp ${GIT_SUBMODULES_DIR}/Makefiles/git/.Makefile.git .
+    fi
+  fi
+fi
+
+if ask "configure .Makefile.venv for python management within a virtual env ?"; then
+  setup_venv
+  setup_direnv_envrc
+fi
+
+info "=> collect repository information to bootstrap README.md file"
+read -p "repo_remote_url: " -e -i "${repo_remote_url:-$(git remote get-url origin 2>/dev/null)}" -r repo_remote_url
+default_repo_name=""
+if [ -n "${repo_remote_url}" ]; then
+  repo_url=$(echo "${repo_remote_url}" | sed 's/git@/https:\/\//')
+  repo_dir="$(basename "${repo_url}" .git)"
+  repo_username="$( echo "${repo_url}" | sed 's/.*://' | awk -F'/' '{ printf $(NF-1) }' )"
+  default_repo_name="${repo_username}/${repo_dir}"
+else
+  repo_username="$(whoami)"
+fi
+read -p "repo_name: "         -e -i "${default_repo_name}"             -r repo_name
+read -p "repo_by: "           -e -i "${repo_username}"                 -r repo_by
+read -p "repo_authors: "      -e -i "$(git config --get user.name)"    -r repo_authors
+read -p "Repo Title Header: " -e -i "${repo_title:-Repository Title}"  -r repo_title
+read -p "Repo description: "  -e -i "${repo_description:-Description}" -r repo_description
+
+COPYRIGHT="Copyright (c) $(date +%Y) ${repo_authors}"
+# shellcheck disable=SC2001
+git_service="$( echo "${repo_url}" | sed 's/.*\(git[a-z]*\)\..*/\1/' )"
+repo_badges="![By ${repo_by}](https://img.shields.io/badge/by-${repo_by}-blue.svg) "
+if [ -n "${git_service}" ]; then
+  repo_badges+="[![${git_service}](https://img.shields.io/badge/git-${git_service}-lightgray.svg)](${repo_url}) "
+  repo_badges+="[![Issues](https://img.shields.io/badge/issues-${git_service}-green.svg)](${repo_url}/issues) "
+fi
+
+info "=> initiate README.md"
+setup_README_header
+setup_README_repo_install_tldr
+
+if ask "configure .Makefile.mkdocs for Mkdocs python management within a virtual env ?"; then
+  ${CMD_PREFIX} cp ${GIT_SUBMODULES_DIR}/Makefiles/mkdocs/.Makefile.mkdocs .
+  setup_mkdocs
+  info "=> complement README.md with mkdocs documentation"
+  setup_README_mkdocs
+fi
+
+info "=> finalize README.md content"
+setup_README_issues

@@ -12,7 +12,17 @@
 
 This repository host a set of `Makefile` (configuration file for [GNU make](http://www.gnu.org/software/make/)) I used for various projects over time (some dates back from very old time).
 
-__Warning:__ Use these `Makefiles` at your own risk!
+__Warning:__ Use these `Makefiles` at your own risk! But I use them daily in all my [team] projects and bootstrap them with the provided script: 
+
+```bash
+./scripts/repo-init -h 
+./scripts/repo-init -d path/to/new-directory    # dry-run: echo the commands
+./scripts/repo-init -d path/to/new-directory -x 
+```
+
+
+
+ 
 
 They often integration a native way to be extended if files such as `.Makefile.local` or `.Makefile.custom` are present (in which case they are included).
 
@@ -23,8 +33,8 @@ The sub-directory name gives you an hint on the usage context.
 | [`ansible/Makefile`](ansible/Makefile)                   | pilot Ansible control repository                             |
 | [`drawio/Makefile`](drawio/Makefile)                     | pilot [draw.io](https://www.drawio.com/) diagram: generate PDF from `*.drawio`, export PNG from PDF |
 | [`generic/Makefile.insubdir`](generic/Makefile.insubdir) | generic `Makefile` meant to call super directory (`../`) Makefile |
-| [`git/.Makefile.git`](git/.Makefile.git)                 | git repository life cycle management (**single branch** repository for gitlab/github workflow) - meant to be transparently integrate with  [`template/Makefile`](template/Makefile) |
-| [`gitflow/.Makefile.git`](gitflow/.Makefile.git)         | git repository life cycle management (**two branches** repository for git-flow based workflow) - meant to be transparently integrate with  [`template/Makefile`](template/Makefile) |
+| [`git/.Makefile.git`](git/.Makefile.git)                 | git repository life cycle management (**single branch** repository for gitlab/github workflow) - meant to be transparently integrated with  [`template/Makefile`](template/Makefile) |
+| [`gitflow/.Makefile.git`](gitflow/.Makefile.git)         | git repository life cycle management (**two branches** repository for git-flow based workflow) - meant to be transparently integrated with  [`template/Makefile`](template/Makefile) |
 | [`gnuplot/Makefile`](gnuplot/Makefile)                   | process [Gnuplot](https://gnuplot.readthedocs.io/en/readthedocs/) sources  and data |
 | [`images/Makefile`](images/Makefile)                     | optimize images sizes (jpeg, png, pdf) and process [`xfig`](https://xfig.org/) and svg  files |
 | [`ISOs/Makefile`](ISOs/Makefile)                         | automatically download and check installations ISOs for major Linux distributions |
@@ -32,8 +42,9 @@ The sub-directory name gives you an hint on the usage context.
 | [`latex_src/Makefile`](latex_src/Makefile)               | handle LaTeX projects top directory (where LaTeX/markdown sources are hosted under `src/`): release PDF, cover page etc. |
 | [`markdown/Makefile.to_html`](markdown/Makefile.to_html) | convert markdown to html with  [`pandoc`](https://pandoc.org/) |
 | [`mermaid/Makefile`](mermaid/Makefile)                   | convert [Mermaid](https://mermaid.js.org/) diagramming sources `*.mmd` to (transparent) PDF, export PNG from PDF |
+| [`mkdocs/.Makefile.mkdocs`](mkdocs/.Makefile.mkdocs)     | [`mkdocs`](http://www.mkdocs.org/#installation) / [`mkdocs-materials`](https://squidfunk.github.io/mkdocs-material/) website management - meant to be transparently integrated with  [`template/Makefile`](template/Makefile) |
 | [`puppet/Rakefile`](repo/Rakefile)                       | **Rakefile** (not `Makefile`) piloting a Puppet control repository |
-| [`repo/Makefile`](repo/Makefile)                         | pilot git repository action (assumed bootstrapped to follow my favorite [git-flow](https://nvie.com/posts/a-successful-git-branching-model/) workflow) |
+| [`repo/Makefile`](repo/Makefile)                         | **OLD** generic makefile piloting git repository action (assumed bootstrapped to follow my favorite [git-flow](https://nvie.com/posts/a-successful-git-branching-model/) workflow). Prefer now to rely on [emplate/Makefile](template/Makefile) |
 | [`servers/Makefile`](servers/Makefile)                   | grab some configuration files from remote servers            |
 | [`venv/Makefile.venv`](venv/Makefile.venv)               | pilot python virtual environment for your projet             |
 
