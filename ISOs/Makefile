@@ -1,6 +1,6 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2026-07-17 14:02 svarrette>
+# Time-stamp: <Fri 2026-07-17 14:53 svarrette>
 ##################################################################################
 # Copyright (c) 2023-2026 Sebastien Varrette
 # Latest version of this Makefile: see
@@ -56,21 +56,23 @@ UBUNTU_SERVER_ISO_URL = '$(UBUNTU_MIRROR)/ubuntu-$(UBUNTU_VERSION)-live-server-$
 UBUNTU_CHECKSUMS      = '$(UBUNTU_MIRROR)/SHA256SUMS'
 UBUNTU_CHECKSUMS_SIGN = '$(UBUNTU_MIRROR)/SHA256SUMS.gpg'
 
-FEDORA_VERSION = 43-1.6
+FEDORA_VERSION = 44-1.7
 FEDORA_VERSION_MAJOR	= $(shell echo $(FEDORA_VERSION) | sed "s/^\([0-9]*\)-[0-9\.]*/\1/")
 FEDORA_ARCH    = x86_64
-FEDORA_MIRROR  = 'https://download.fedoraproject.org/pub/fedora/linux/releases/$(FEDORA_VERSION_MAJOR)/Workstation/$(FEDORA_ARCH)/iso'
+FEDORA_MIRROR_BASEURL  = 'https://download.fedoraproject.org/pub/fedora/linux/releases/$(FEDORA_VERSION_MAJOR)/'
+FEDORA_MIRROR  = '$(FEDORA_MIRROR_BASEURL)/Workstation/$(FEDORA_ARCH)/iso'
+FEDORA_SERVER_MIRROR  = '$(FEDORA_MIRROR_BASEURL)/Server/$(FEDORA_ARCH)/iso'
+FEDORA_SILVERBLUE_MIRROR = '$(FEDORA_MIRROR_BASEURL)/Silverblue/$(FEDORA_ARCH)/iso'
 FEDORA_ISO_URL = '$(FEDORA_MIRROR)/Fedora-Workstation-Live-$(FEDORA_VERSION).$(FEDORA_ARCH).iso'
+FEDORA_SERVER_ISO_URL = '$(FEDORA_SERVER_MIRROR)/Fedora-Server-netinst-$(FEDORA_ARCH)-$(FEDORA_VERSION).iso'
+FEDORA_SILVERBLUE_ISO_URL = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-ostree-$(FEDORA_ARCH)-$(FEDORA_VERSION).iso'
 FEDORA_CHECKSUMS  		= '$(FEDORA_MIRROR)/Fedora-Workstation-$(FEDORA_VERSION)-$(FEDORA_ARCH)-CHECKSUM'
 FEDORA_CHECKSUMS_SIGN = '$(FEDORA_CHECKSUMS)'
+FEDORA_SERVER_CHECKSUMS      = '$(FEDORA_SERVER_MIRROR)/Fedora-Server-$(FEDORA_VERSION)-$(FEDORA_ARCH)-CHECKSUM'
+FEDORA_SERVER_CHECKSUMS_SIGN = '$(FEDORA_SERVER_CHECKSUMS)'
+FEDORA_SILVERBLUE_CHECKSUMS			 = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-$(FEDORA_VERSION)-$(FEDORA_ARCH)-CHECKSUM'
+FEDORA_SILVERBLUE_CHECKSUMS_SIGN = '$(FEDORA_SILVERBLUE_CHECKSUMS)'
 
-FEDORA_SILVERBLUE_VERSION = $(FEDORA_VERSION)
-FEDORA_SILVERBLUE_VERSION_MAJOR	= $(shell echo $(FEDORA_SILVERBLUE_VERSION) | sed "s/^\([0-9]*\)-[0-9\.]*/\1/")
-FEDORA_SILVERBLUE_ARCH    = $(FEDORA_ARCH)
-FEDORA_SILVERBLUE_MIRROR  = 'https://download.fedoraproject.org/pub/fedora/linux/releases/$(FEDORA_SILVERBLUE_VERSION_MAJOR)/Silverblue/$(FEDORA_SILVERBLUE_ARCH)/iso'
-FEDORA_SILVERBLUE_ISO_URL = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-ostree-$(FEDORA_SILVERBLUE_ARCH)-$(FEDORA_SILVERBLUE_VERSION).iso'
-# Just why reverse version <-> arch ????
-FEDORA_SILVERBLUE_CHECKSUMS      = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-$(FEDORA_SILVERBLUE_VERSION)-$(FEDORA_SILVERBLUE_ARCH)-CHECKSUM'
 
 # MINT_VERSION = 22.2
 # MINT_MIRROR  = 'https://mirrors.univ-reims.fr/IMAGES/mint/stable/$(MINT_VERSION)'
@@ -287,6 +289,7 @@ list:
 ###############
 .PHONY: clean distclean
 clean: $(CLEAN_TARGETS)
+	@echo "=> 'make distclean' to remove all ISOs"
 distclean: $(DISTCLEAN_TARGETS)
 
 clean-checksums: $(SUPPORTED_OS:%=clean-%-checksums)
@@ -365,15 +368,20 @@ clean-ubuntu: clean-ubuntu-checksums __clean-iso-ubuntu __clean-iso-ubuntu-serve
 	-rm -f $(ISO_DIR)/ubuntu-server.iso
 
 
-########## Fedora ###########
-fedora: fetch-fedora check-fedora-iso
+########## Fedora (Workstation, Server and CoreOS) ###########
+fedora: fetch-fedora-iso check-fedora-iso
 
-fetch-fedora: fetch-fedora-iso fetch-fedora-iso-checksum fetch-fedora-gpg-keys
-fetch-fedora-iso: __fetch-iso-fedora
-fetch-fedora-iso-checksum: __fetch-iso-fedora-checksum
+fetch-fedora-iso: fetch-fedora-workstation-iso fetch-fedora-server-iso fetch-fedora-silverblue-iso
+fetch-fedora-workstation-iso: __fetch-iso-fedora           __fetch-iso-fedora-checksum            fetch-fedora-gpg-keys
+fetch-fedora-server-iso: __fetch-iso-fedora-server         __fetch-iso-fedora-server-checksum     fetch-fedora-gpg-keys
+fetch-fedora-silverblue-iso: __fetch-iso-fedora-silverblue __fetch-iso-fedora-silverblue-checksum fetch-fedora-gpg-keys
 
 $(eval $(call __FETCH,iso-fedora,$(ISO_DIR),$(FEDORA_ISO_URL)))
 $(eval $(call __FETCH,iso-fedora-checksum,$(ISO_DIR),$(FEDORA_CHECKSUMS)))
+$(eval $(call __FETCH,iso-fedora-server,$(ISO_DIR),$(FEDORA_SERVER_ISO_URL)))
+$(eval $(call __FETCH,iso-fedora-server-checksum,$(ISO_DIR),$(FEDORA_SERVER_CHECKSUMS)))
+$(eval $(call __FETCH,iso-fedora-silverblue,$(ISO_DIR),$(FEDORA_SILVERBLUE_ISO_URL)))
+$(eval $(call __FETCH,iso-fedora-silverblue-checksum,$(ISO_DIR),$(FEDORA_SILVERBLUE_CHECKSUMS)))
 
 fetch-fedora-gpg-keys:
 	@echo "=> collect the Fedora GPG keys"
@@ -381,37 +389,26 @@ fetch-fedora-gpg-keys:
 	-gpg --import fedora.gpg
 	-rm -f fedora.gpg
 
-check-fedora-iso: fetch-fedora fetch-fedora-gpg-keys __gpg_verify_sign-iso-fedora-checksum __check-iso-fedora clean-fedora-checksums
+check-fedora-iso: check-fedora-workstation-iso check-fedora-server-iso check-fedora-silverblue-iso
+check-fedora-workstation-iso: fetch-fedora-workstation-iso __gpg_verify_sign-iso-fedora-checksum __check-iso-fedora clean-fedora-workstation-checksums
+check-fedora-server-iso: fetch-fedora-server-iso __gpg_verify_sign-iso-fedora-server-checksum __check-iso-fedora-server clean-fedora-server-checksums
+check-fedora-silverblue-iso: fetch-fedora-silverblue-iso __gpg_verify_sign-iso-fedora-silverblue-checksum __check-iso-fedora-silverblue clean-fedora-silverblue-checksums
+
 $(eval $(call __GPG_VERIFY_SIGN,iso-fedora-checksum,$(ISO_DIR),$(FEDORA_CHECKSUMS)))
-$(eval $(call __VERIFY_ISO_CHECKSUM,fedora,$(ISO_DIR),$(FEDORA_ISO_URL),$(FEDORA_CHECKSUMS)))
-
-
-clean-fedora-checksums:  __clean-iso-fedora-checksum
-clean-fedora: clean-fedora-checksums __clean-iso-fedora
-	-rm -f $(ISO_DIR)/fedora.iso
-
-########## Fedora Silverblue ###########
-fedora-silverblue silverblue: fetch-fedora-silverblue check-fedora-silverblue-iso
-
-fetch-silverblue fetch-fedora-silverblue: fetch-fedora-silverblue-iso fetch-fedora-silverblue-iso-checksum fetch-fedora-gpg-keys
-	if [ -f "$(ISO_DIR)/Fedora-Silverblue-ostree-$(FEDORA_SILVERBLUE_ARCH)-$(FEDORA_SILVERBLUE_VERSION).iso" ]; then \
-		echo "Bugfix silverblue ISO filename (swap arch and version)"; \
-		if [ ! -h "Fedora-Silverblue-ostree-$(FEDORA_SILVERBLUE_VERSION)-$(FEDORA_SILVERBLUE_ARCH).iso" ]; then \
-			ln -s $(ISO_DIR)/Fedora-Silverblue-ostree-$(FEDORA_SILVERBLUE_ARCH)-$(FEDORA_SILVERBLUE_VERSION).iso Fedora-Silverblue-ostree-$(FEDORA_SILVERBLUE_VERSION)-$(FEDORA_SILVERBLUE_ARCH).iso; \
-		fi ; \
-	fi
-fetch-silverblue-iso fetch-fedora-silverblue-iso: __fetch-iso-fedora-silverblue
-fetch-silverblue-iso-checksum fetch-fedora-silverblue-iso-checksum: __fetch-iso-fedora-silverblue-checksum
-
-$(eval $(call __FETCH,iso-fedora-silverblue,$(ISO_DIR),$(FEDORA_SILVERBLUE_ISO_URL)))
-$(eval $(call __FETCH,iso-fedora-silverblue-checksum,$(ISO_DIR),$(FEDORA_SILVERBLUE_CHECKSUMS)))
-
-check-silverblue-iso check-fedora-silverblue-iso: fetch-fedora-silverblue fetch-fedora-gpg-keys __gpg_verify_sign-iso-fedora-silverblue-checksum __check-iso-fedora-silverblue clean-fedora-silverblue-checksums
+$(eval $(call __GPG_VERIFY_SIGN,iso-fedora-server-checksum,$(ISO_DIR),$(FEDORA_SERVER_CHECKSUMS)))
 $(eval $(call __GPG_VERIFY_SIGN,iso-fedora-silverblue-checksum,$(ISO_DIR),$(FEDORA_SILVERBLUE_CHECKSUMS)))
+$(eval $(call __VERIFY_ISO_CHECKSUM,fedora,$(ISO_DIR),$(FEDORA_ISO_URL),$(FEDORA_CHECKSUMS)))
+$(eval $(call __VERIFY_ISO_CHECKSUM,fedora-server,$(ISO_DIR),$(FEDORA_SERVER_ISO_URL),$(FEDORA_SERVER_CHECKSUMS)))
 $(eval $(call __VERIFY_ISO_CHECKSUM,fedora-silverblue,$(ISO_DIR),$(FEDORA_SILVERBLUE_ISO_URL),$(FEDORA_SILVERBLUE_CHECKSUMS)))
 
-clean-silverblue-checksums clean-fedora-silverblue-checksums:  __clean-iso-fedora-silverblue-checksum
-clean-silverblue clean-fedora-silverblue: clean-fedora-silverblue-checksums __clean-iso-fedora-silverblue
+clean-fedora-checksums: clean-fedora-workstation-checksums clean-fedora-server-checksums clean-fedora-silverblue-checksums
+clean-fedora-workstation-checksums:  __clean-iso-fedora-checksum
+clean-fedora-server-checksums:       __clean-iso-fedora-server-checksum
+clean-fedora-silverblue-checksums:   __clean-iso-fedora-silverblue-checksum
+
+clean-fedora: clean-fedora-checksums __clean-iso-fedora __clean-iso-fedora-server __clean-iso-fedora-silverblue
+	-rm -f $(ISO_DIR)/fedora.iso
+	-rm -f $(ISO_DIR)/fedora-server.iso
 	-rm -f $(ISO_DIR)/fedora-silverblue.iso
 
 
