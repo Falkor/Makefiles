@@ -1,6 +1,6 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2026-07-17 15:25 svarrette>
+# Time-stamp: <Fri 2026-07-17 15:39 svarrette>
 ##################################################################################
 # Copyright (c) 2023-2026 Sebastien Varrette
 # Latest version of this Makefile: see
@@ -74,32 +74,32 @@ FEDORA_SILVERBLUE_CHECKSUMS			 = '$(FEDORA_SILVERBLUE_MIRROR)/Fedora-Silverblue-
 FEDORA_SILVERBLUE_CHECKSUMS_SIGN = '$(FEDORA_SILVERBLUE_CHECKSUMS)'
 
 RHEL_VERSION	= 10.2
+RHEL_ARCH		  = x86_64
 # RHEL_ISO_TYPE	= dvd
-# RHEL_ARCH		  = x86_64
 # RHEL_MIRROR	  = 'https://developers.redhat.com/content-gateway/file/rhel/'
 # RHEL_ISO_URL  = '$(RHEL_MIRROR)/Red_Hat_Enterprise_Linux_$(RHEL_VERSION)/rhel-$(RHEL_VERSION)-$(RHEL_ARCH)-$(RHEL_ISO_TYPE).iso'
 # RHEL_CHECKSUMS      = '$(RHEL_MIRROR)/CHECKSUM'
 # RHEL_CHECKSUMS_SIGN = '$(RHEL_MIRROR)/CHECKSUM.sig'
 # RHEL_GPG_KEY = 'https://raw.githubusercontent.com/rocky-linux/checksums/main/keys/RPM-GPG-KEY-Rocky-$(ROCKYLINUX_VERSION_MAJOR)'
 
-ROCKYLINUX_VERSION	= $(RHEL_VERSION)
-ROCKYLINUX_ISO_TYPE	= minimal
-ROCKYLINUX_ARCH		  = x86_64
-ROCKYLINUX_VERSION_MAJOR	= $(shell echo $(ROCKYLINUX_VERSION) | sed "s/^\([0-9]*\).*/\1/")
-ROCKYLINUX_MIRROR	  = 'https://download.rockylinux.org/pub/rocky/$(ROCKYLINUX_VERSION_MAJOR)/isos/$(ROCKYLINUX_ARCH)'
+ROCKYLINUX_VERSION  = $(RHEL_VERSION)
+ROCKYLINUX_ISO_TYPE = boot
+ROCKYLINUX_ARCH     = $(RHEL_ARCH)
+ROCKYLINUX_VERSION_MAJOR  = $(shell echo $(ROCKYLINUX_VERSION) | sed "s/^\([0-9]*\).*/\1/")
+ROCKYLINUX_MIRROR   = 'https://download.rockylinux.org/pub/rocky/$(ROCKYLINUX_VERSION_MAJOR)/isos/$(ROCKYLINUX_ARCH)'
 ROCKYLINUX_ISO_URL  = '$(ROCKYLINUX_MIRROR)/Rocky-$(ROCKYLINUX_VERSION)-$(ROCKYLINUX_ARCH)-$(ROCKYLINUX_ISO_TYPE).iso'
 ROCKYLINUX_CHECKSUMS      = '$(ROCKYLINUX_MIRROR)/CHECKSUM'
 ROCKYLINUX_CHECKSUMS_SIGN = '$(ROCKYLINUX_CHECKSUMS).asc'
 ROCKYLINUX_GPG_KEY = 'https://raw.githubusercontent.com/rocky-linux/checksums/main/keys/RPM-GPG-KEY-Rocky-$(ROCKYLINUX_VERSION_MAJOR)'
 
-ALMALINUX_VERSION		= $(ROCKYLINUX_VERSION)
-ALMALINUX_ISO_TYPE	= $(ROCKYLINUX_ISO_TYPE)
-ALMALINUX_ARCH			= $(ROCKYLINUX_ARCH)
-ALMALINUX_MIRROR		= 'https://repo.almalinux.org/almalinux/$(ALMALINUX_VERSION)/isos/$(ALMALINUX_ARCH)'
-ALMALINUX_ISO_URL		= '$(ALMALINUX_MIRROR)/AlmaLinux-$(ALMALINUX_VERSION)-$(ALMALINUX_ARCH)-$(ALMALINUX_ISO_TYPE).iso'
+ALMALINUX_VERSION   = $(RHEL_VERSION)
+ALMALINUX_ISO_TYPE  = $(ROCKYLINUX_ISO_TYPE)
+ALMALINUX_ARCH      = $(RHEL_ARCH)
+ALMALINUX_MIRROR    = 'https://repo.almalinux.org/almalinux/$(ALMALINUX_VERSION)/isos/$(ALMALINUX_ARCH)'
+ALMALINUX_ISO_URL   = '$(ALMALINUX_MIRROR)/AlmaLinux-$(ALMALINUX_VERSION)-$(ALMALINUX_ARCH)-$(ALMALINUX_ISO_TYPE).iso'
 ALMALINUX_CHECKSUMS = '$(ALMALINUX_MIRROR)/CHECKSUM'
 ALMALINUX_CHECKSUMS_SIGN = '$(ALMALINUX_CHECKSUMS)'
-ALMALINUX_VERSION_MAJOR	= $(shell echo $(ALMALINUX_VERSION) | sed "s/^\([0-9]*\).*/\1/")
+ALMALINUX_VERSION_MAJOR = $(shell echo $(ALMALINUX_VERSION) | sed "s/^\([0-9]*\).*/\1/")
 ALMALINUX_GPG_KEY   = 'https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux-$(ALMALINUX_VERSION_MAJOR)'
 
 ARCHLINUX_VERSION = latest
@@ -229,8 +229,9 @@ include $(MAKEFILE_CUSTOM)
 endif
 
 ################ Let's go ################
-.PHONY: all
+.PHONY: all all-os
 all: $(TARGETS)
+all-os: $(SUPPORTED_OS)
 
 ### general help: list all available make directives
 .PHONY: help
@@ -434,13 +435,12 @@ clean-rockylinux-checksums: __clean-iso-rockylinux-checksum __clean-iso-rockylin
 clean-rockylinux: clean-rockylinux-checksums __clean-iso-rockylinux
 	-rm -f $(ISO_DIR)/rockylinux.iso
 
+################################
 ########## AlmaLinux ###########
+################################
 almalinux: fetch-almalinux-iso check-almalinux-iso
 
-fetch-almalinux: fetch-almalinux-iso fetch-almalinux-iso-checksum fetch-almalinux-gpg-keys
-fetch-almalinux-iso: __fetch-iso-almalinux
-fetch-almalinux-iso-checksum: __fetch-iso-almalinux-checksum
-# __fetch-iso-almalinux-sign
+fetch-almalinux-iso: __fetch-iso-almalinux __fetch-iso-almalinux-checksum fetch-almalinux-gpg-keys
 
 $(eval $(call __FETCH,iso-almalinux,$(ISO_DIR),$(ALMALINUX_ISO_URL)))
 $(eval $(call __FETCH,iso-almalinux-checksum,$(ISO_DIR),$(ALMALINUX_CHECKSUMS)))
@@ -451,7 +451,7 @@ fetch-almalinux-gpg-keys: __fetch-almalinux-gpg-key
 	gpg --import $(ISO_DIR)/$(shell basename $(ALMALINUX_GPG_KEY))
 	$(MAKE) __clean-almalinux-gpg-key
 
-check-almalinux-iso: fetch-almalinux fetch-almalinux-gpg-keys __gpg_verify_sign-iso-almalinux-checksum __check-iso-almalinux clean-almalinux-checksums
+check-almalinux-iso: fetch-almalinux-iso fetch-almalinux-gpg-keys __gpg_verify_sign-iso-almalinux-checksum __check-iso-almalinux clean-almalinux-checksums
 $(eval $(call __GPG_VERIFY_SIGN,iso-almalinux-checksum,$(ISO_DIR),$(ALMALINUX_CHECKSUMS)))
 $(eval $(call __VERIFY_ISO_CHECKSUM,almalinux,$(ISO_DIR),$(ALMALINUX_ISO_URL),$(ALMALINUX_CHECKSUMS)))
 
