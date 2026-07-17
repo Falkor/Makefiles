@@ -1,6 +1,6 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Fri 2026-07-17 15:39 svarrette>
+# Time-stamp: <Fri 2026-07-17 16:00 svarrette>
 ##################################################################################
 # Copyright (c) 2023-2026 Sebastien Varrette
 # Latest version of this Makefile: see
@@ -106,8 +106,8 @@ ARCHLINUX_VERSION = latest
 ARCHLINUX_ARCH    = x86_64
 ARCHLINUX_MIRROR  = 'https://mirror.cyberbits.eu/archlinux/iso/$(ARCHLINUX_VERSION)'
 ARCHLINUX_ISO_URL = '$(ARCHLINUX_MIRROR)/archlinux-$(ARCHLINUX_ARCH).iso'
-ARCHLINUX_CHECKSUMS = '$(ARCHLINUX_MIRROR)/sha256sums.txt'
 ARCHLINUX_ISO_SIGN = '$(ARCHLINUX_ISO_URL).sig'
+ARCHLINUX_CHECKSUMS = '$(ARCHLINUX_MIRROR)/sha256sums.txt'
 
 # https://www.pfsense.org/download/
 PFSENSE_VERSION = 2.7.2
@@ -460,13 +460,12 @@ clean-almalinux: clean-almalinux-checksums __clean-iso-almalinux
 	-rm -f $(ISO_DIR)/almalinux.iso
 
 
-
+#################################
 ########## Arch Linux ###########
+#################################
 archlinux: fetch-archlinux-iso check-archlinux-iso
 
-fetch-archlinux: fetch-archlinux-iso fetch-archlinux-iso-checksum fetch-archlinux-gpg-keys
-fetch-archlinux-iso: __fetch-iso-archlinux
-fetch-archlinux-iso-checksum: __fetch-iso-archlinux-checksum	__fetch-iso-archlinux-sign
+fetch-archlinux-iso: __fetch-iso-archlinux __fetch-iso-archlinux-checksum	__fetch-iso-archlinux-sign
 
 $(eval $(call __FETCH,iso-archlinux,$(ISO_DIR),$(ARCHLINUX_ISO_URL)))
 $(eval $(call __FETCH,iso-archlinux-checksum,$(ISO_DIR),$(ARCHLINUX_CHECKSUMS)))
@@ -474,18 +473,11 @@ $(eval $(call __FETCH,iso-archlinux-sign,$(ISO_DIR),$(ARCHLINUX_ISO_SIGN)))
 
 fetch-archlinux-gpg-keys:
 	@echo "=> collect the Archlinux GPG keys - see https://archlinux.org/download/#checksums"
-	gpg --keyid-format long --keyserver keyserver.ubuntu.com --recv-keys 0x54449A5C
+	gpg --keyid-format long --keyserver keyserver.ubuntu.com --recv-keys 0x3E80CA1A8B89F69CBA57D98A76A5EF9054449A5C
 
-
-check-archlinux-iso: fetch-archlinux  __gpg_verify_detached_sign-iso-archlinux __check-iso-archlinux clean-archlinux-checksums
+check-archlinux-iso: fetch-archlinux-iso  __gpg_verify_detached_sign-iso-archlinux __check-iso-archlinux clean-archlinux-checksums
 $(eval $(call __GPG_VERIFY_DETACHED_SIGN,iso-archlinux,$(ISO_DIR),$(ARCHLINUX_ISO_URL),$(ARCHLINUX_ISO_SIGN)))
-
 $(eval $(call __VERIFY_ISO_CHECKSUM,archlinux,$(ISO_DIR),$(ARCHLINUX_ISO_URL),$(ARCHLINUX_CHECKSUMS)))
-
-
-
-# check-archlinux-iso: __check-iso-archlinux
-# $(eval $(call __VERIFY_CHECKSUM2,archlinux,$(ISO_DIR),$(ARCHLINUX_ISO_URL),$(ARCHLINUX_CHECKSUMS)))
 
 clean-archlinux-checksums: __clean-iso-archlinux-checksum __clean-iso-archlinux-sign
 clean-archlinux: clean-archlinux-checksums __clean-iso-archlinux
