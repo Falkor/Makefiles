@@ -255,17 +255,19 @@ info-iso:
 
 list:
 	@echo "=> list of supported OS <os>:"
-	@echo "           <os>:       Distrib   Version   Arch  URL "
-	@echo "---------------- -------------- -------- ------ ---------"
-	@printf "%15s: %14s %8s %6s %s\n" "debian"		 "Debian"			$(DEBIAN_VERSION) $(DEBIAN_ARCH) $(DEBIAN_ISO_URL)
-	@printf "%15s: %14s %8s %6s %s\n"	"ubuntu" "Ubuntu Desktop"	$(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_ISO_URL)
-	@printf "%15s: %14s %8s %6s %s\n"	"ubuntu-server" "Ubuntu Server" $(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_SERVER_ISO_URL)
-	@printf "%15s: %14s %8s %6s %s\n"	"fedora"		 "Fedora"			$(FEDORA_VERSION) $(FEDORA_ARCH) $(FEDORA_ISO_URL)
-	@printf "%15s: %14s %8s %6s %s\n"	"silverblue" "Fedora Silverblue"		$(FEDORA_SILVERBLUE_VERSION) $(FEDORA_SILVERBLUE_ARCH) $(FEDORA_SILVERBLUE_ISO_URL)
-# 	@printf "%15s: %14s %8s %6s %s\n"	"mint"	 "Linux Mint"			$(MINT_VERSION)		$(MINT_ARCH)	 $(MINT_ISO_URL)
-	@printf "%15s: %14s %8s %6s %s\n"	"rockylinux" "RockyLinux" $(ROCKYLINUX_VERSION) $(ROCKYLINUX_ARCH) $(ROCKYLINUX_ISO_URL)
-	@printf "%15s: %14s %8s %6s %s\n"	"archlinux"	 "ArchLinux"	$(ARCHLINUX_VERSION) $(ARCHLINUX_ARCH) $(ARCHLINUX_ISO_URL)
-	@printf "%15s: %14s %8s %6s %s\n"	"pfsense"		 "pfSense"		$(PFSENSE_VERSION) $(PFSENSE_ARCH) $(PFSENSE_ISO_URL)
+	@echo "                <os>:           Distrib   Version   Arch  URL "
+	@echo "--------------------- ------------------ -------- ------ ---------"
+	@printf "%20s: %18s %8s %6s %s\n" "debian"		 "Debian"			$(DEBIAN_VERSION) $(DEBIAN_ARCH) $(DEBIAN_ISO_URL)
+	@printf "%20s: %18s %8s %6s %s\n"	"ubuntu" "Ubuntu *"	$(UBUNTU_VERSION) $(UBUNTU_ARCH)
+	@printf "%20s: %18s %8s %6s %s\n"	"ubuntu-desktop" "Ubuntu Desktop" $(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_ISO_URL)
+	@printf "%20s: %18s %8s %6s %s\n"	"ubuntu-server" "Ubuntu Server"		$(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_SERVER_ISO_URL)
+	@printf "%20s: %18s %8s %6s %s\n"	"fedora"		 "Fedora *"			$(FEDORA_VERSION) $(FEDORA_ARCH)
+	@printf "%20s: %18s %8s %6s %s\n"	"fedora-workstation" "Fedora Workstation"	$(FEDORA_VERSION) $(FEDORA_ARCH) $(FEDORA_ISO_URL)
+	@printf "%20s: %18s %8s %6s %s\n"	"fedora-silverblue"	 "Fedora Silverblue"	$(FEDORA_VERSION) $(FEDORA_ARCH) $(FEDORA_SILVERBLUE_ISO_URL)
+	@printf "%20s: %18s %8s %6s %s\n"	"fedora-server"	 "Fedora Server"	$(FEDORA_VERSION) $(FEDORA_ARCH) $(FEDORA_SERVER_ISO_URL)
+	@printf "%20s: %18s %8s %6s %s\n"	"rockylinux" "RockyLinux" $(ROCKYLINUX_VERSION) $(ROCKYLINUX_ARCH) $(ROCKYLINUX_ISO_URL)
+	@printf "%20s: %18s %8s %6s %s\n"	"archlinux"	 "ArchLinux"	$(ARCHLINUX_VERSION) $(ARCHLINUX_ARCH) $(ARCHLINUX_ISO_URL)
+	@printf "%20s: %18s %8s %6s %s\n"	"pfsense"		 "pfSense"		$(PFSENSE_VERSION) $(PFSENSE_ARCH) $(PFSENSE_ISO_URL)
 	@echo "------------------------------------------------"
 	@echo "Use make <os> to:"
 	@echo "  1. fetch ISO and the associated checksum files and eventual signatures"
