@@ -1,6 +1,6 @@
 ##################################################################################
 # Makefile - Configuration file for GNU make (http://www.gnu.org/software/make/)
-# Time-stamp: <Sat 2025-12-20 16:45 svarrette>
+# Time-stamp: <Fri 2026-07-17 11:26 svarrette>
 ##################################################################################
 #
 # Copyright (c) 2023-2025 Sebastien Varrette
@@ -29,14 +29,20 @@
 # make distclean Remove all downloaded files (incl. ISO)
 #
 ############################## Variables Declarations ############################
+SHELL = /bin/bash
 
 # Check mandatory commands needed for this Makefile
 EXECUTABLES = curl
 $(foreach exec,$(EXECUTABLES),\
 	$(if $(shell command -v $(exec) 2>/dev/null),,$(error "$(exec) not available in PATH	")))
 
+############
+# List of supported OS in this Makefile (corresponding to directive names)
+SUPPORTED_OS = debian ubuntu archlinux fedora fedora-silverblue mint rockylinux almalinux archlinux pfsense
+
 ### OS ISOs characteristics to download and check
-DEBIAN_VERSION = 13.2.0
+# You normally only need to update the <OS>_VERSION variable to the latest version
+DEBIAN_VERSION = 13.6.0
 DEBIAN_ARCH    = amd64
 DEBIAN_MIRROR  = 'https://cdimage.debian.org/debian-cd/current/$(DEBIAN_ARCH)/iso-cd/'
 DEBIAN_ISO_URL = '$(DEBIAN_MIRROR)/debian-$(DEBIAN_VERSION)-$(DEBIAN_ARCH)-netinst.iso'
@@ -72,7 +78,7 @@ MINT_ISO_URL = '$(MINT_MIRROR)/linuxmint-$(MINT_VERSION)-cinnamon-64bit.iso'
 MINT_CHECKSUMS			= '$(MINT_MIRROR)/sha256sum.txt'
 MINT_CHECKSUMS_SIGN = '$(MINT_MIRROR)/sha256sum.txt.gpg'
 
-# RHEL_VERSION	= 9.4
+# RHEL_VERSION	= 10.2
 # RHEL_ISO_TYPE	= dvd
 # RHEL_ARCH		  = x86_64
 # RHEL_MIRROR	  = 'https://developers.redhat.com/content-gateway/file/rhel/'
@@ -129,6 +135,10 @@ MAKEFILE_CUSTOM = .Makefile.custom
 define __FETCH
 .PHONY: __fetch-$1 __clean-$1
 __fetch-$1:
+	@if [ ! -d "$2" ]; then \
+    echo "ERROR: non existing target directory '$2'"; \
+		exit 1; \
+	fi
 	@echo "=> fetching $2/$$(shell basename $3)"
 	@if [ ! -f "$2/$$(shell basename $3)" ]; then \
 		curl -L -o $2/$$(shell basename $3) $3; \
@@ -209,31 +219,43 @@ __clean-gunzipped-iso-$1:
 endef
 
 
-################
+##################### Main targets #####################
 TARGETS = list
+INFO_TARGETS  = info-iso
+CLEAN_TARGETS = clean-checksums
+DISTCLEAN_TARGETS = $(SUPPORTED_OS:%=clean-%)
 
-CLEAN_TARGETS     = clean-checksums
-DISTCLEAN_TARGETS = clean-debian clean-ubuntu clean-archlinux clean-rocky-linux
-
+# local hook (before) for 'easy' customization. Typical content exemple:
+#    ISO_DIR = /path/to/custom/dir
+#    all: $(TARGETS)
+#
 ifneq (,$(wildcard $(MAKEFILE_CUSTOM)))
 include $(MAKEFILE_CUSTOM)
 endif
 
 ################ Let's go ################
+.PHONY: all
 all: $(TARGETS)
 
-clean: $(CLEAN_TARGETS)
-distclean: $(DISTCLEAN_TARGETS)
+### general help: list all available make directives
+.PHONY: help
+help:
+	@echo "=> available directives: "
+	@grep -EHn '^[a-z0-9_-]+[^:$$]*:' $(MAKEFILE_LIST) | grep -v '=' | awk -F: '{print $$3}' | xargs -n1 echo | sort | uniq | awk '{printf "\033[36m   make %-30s\033[0m\n", $$1}'
 
-fetch: fetch-debian-iso fetch-ubuntu-iso fetch-rockylinux-iso fetch-archlinux-iso fetch-pfsense-iso fetch-mint-iso
-check: check-debian-iso check-ubuntu-iso check-rockylinux-iso check-archlinux-iso check-pfsense-iso check-mint-iso
+### Info/Debug
+.PHONY: info info-iso list
+info:  $(INFO_TARGETS)
 
-.PHONY: info list
-info:
+info-iso:
 	@echo "TARGETS= $(TARGETS)"
-	@echo "============="
+	@echo "CLEAN_TARGETS = $(CLEAN_TARGETS)"
+	@echo "DISTCLEAN_TARGETS = $(DISTCLEAN_TARGETS)"
+	@echo "============================================================================================================"
 	@echo "Use make <os> to fetch and verify an ISO for <os>, and create a convenient symlink <os>.iso if all goes well"
-	@echo "Run make list to get the list of supported OS"
+	@echo "where <os> in: $(SUPPORTED_OS)"
+	@echo "Run 'make list' to get detailed information on supported OS"
+	@echo "============================================================================================================"
 	$(MAKE) list
 
 list:
@@ -243,7 +265,7 @@ list:
 	@printf "%10s: %10s %8s %6s %s\n" "debian"     "Debian"     $(DEBIAN_VERSION) $(DEBIAN_ARCH) $(DEBIAN_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"ubuntu"     "Ubuntu"     $(UBUNTU_VERSION) $(UBUNTU_ARCH) $(UBUNTU_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"fedora"     "Fedora"     $(FEDORA_VERSION) $(FEDORA_ARCH) $(FEDORA_ISO_URL)
-	@printf "%10s: %10s %8s %6s %s\n"	"silverblue" "Fedora *"     $(FEDORA_SILVERBLUE_VERSION) $(FEDORA_SILVERBLUE_ARCH) $(FEDORA_SILVERBLUE_ISO_URL)
+	@printf "%10s: %10s %8s %6s %s\n"	"silverblue" "Fedora *"   $(FEDORA_SILVERBLUE_VERSION) $(FEDORA_SILVERBLUE_ARCH) $(FEDORA_SILVERBLUE_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"mint"   "Linux Mint"     $(MINT_VERSION)   $(MINT_ARCH)   $(MINT_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"rockylinux" "RockyLinux" $(ROCKYLINUX_VERSION) $(ROCKYLINUX_ARCH) $(ROCKYLINUX_ISO_URL)
 	@printf "%10s: %10s %8s %6s %s\n"	"archlinux"  "ArchLinux"  $(ARCHLINUX_VERSION) $(ARCHLINUX_ARCH) $(ARCHLINUX_ISO_URL)
@@ -259,7 +281,28 @@ list:
 	@echo " In particular, if you don't end with a symlink <os>.iso, don't waste time to prepare a USB stick of use the present ISO"
 	@echo " the downloaded file is probably corrupted."
 
-clean-checksums:  clean-debian-checksums  clean-ubuntu-checksums clean-mint-checksums clean-rocky-linux-checksums clean-archlinux-checksums clean-pfsense-checksums
+###############
+### Cleanup ###
+###############
+.PHONY: clean distclean
+clean: $(CLEAN_TARGETS)
+distclean: $(DISTCLEAN_TARGETS)
+
+clean-checksums: $(SUPPORTED_OS:%=%-checksum)
+
+###############################################
+### General fetch and check ISOs directives ###
+###############################################
+.PHONY: fetch check
+fetch: $(SUPPORTED_OS:%=fetch-%-iso)
+check: $(SUPPORTED_OS:%=check-%-iso)
+
+##############################
+### Specific OS Management ###
+##############################
+# Normally you won't have to touch anything below
+# To support/add a new OS, kindly respect the used structure
+# To update the latest version, correcting the <OS>_VERSION variable should be sufficient
 
 ##########  Debian ###########
 debian: fetch-debian-iso check-debian-iso
