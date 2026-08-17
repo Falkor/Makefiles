@@ -17,11 +17,11 @@ MKDOCS_BUILD_DIR = public
 
 .PHONY: doc doc-build doc-get-deps clean-doc
 doc:
-	mkdocs serve --livereload
+	NO_MKDOCS_2_WARNING=1 mkdocs serve --livereload
 
 doc-build: clean-doc
 	@echo "=> building the mkdocs website into $(MKDOCS_BUILD_DIR)/"
-	mkdocs build -d $(MKDOCS_BUILD_DIR)
+	NO_MKDOCS_2_WARNING=1 mkdocs build -d $(MKDOCS_BUILD_DIR)
 
 doc-get-deps:
 	@echo "Show required PyPI packages inferred from plugins in mkdocs.yml"
