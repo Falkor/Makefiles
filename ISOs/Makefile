@@ -41,7 +41,7 @@ SUPPORTED_OS = debian ubuntu ubuntu-server archlinux fedora fedora-silverblue ro
 
 ### OS ISOs characteristics to download and check
 # You normally only need to update the <OS>_VERSION variable to the latest version
-DEBIAN_VERSION = 13.6.0
+DEBIAN_VERSION = 13.7.0
 DEBIAN_ARCH    = amd64
 DEBIAN_MIRROR  = 'https://cdimage.debian.org/debian-cd/current/$(DEBIAN_ARCH)/iso-cd/'
 DEBIAN_ISO_URL = '$(DEBIAN_MIRROR)/debian-$(DEBIAN_VERSION)-$(DEBIAN_ARCH)-netinst.iso'
